@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vaxxed and Waxxed · Pro Kickball Reference</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Georgia', serif;
+      font-size: 14px;
+      background: #f5f5f0;
+      color: #1a1a1a;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #1a3a2a;
+      color: #fff;
+      padding: 0 16px;
+    }
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px 0 12px;
+      display: flex;
+      align-items: flex-end;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .site-title {
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #86efac;
+      font-family: Arial, sans-serif;
+      margin-bottom: 4px;
+    }
+    .team-name {
+      font-size: 28px;
+      font-weight: bold;
+      letter-spacing: -.5px;
+      line-height: 1;
+    }
+    .header-record {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      color: #d1fae5;
+      margin-top: 4px;
+    }
+    .champ-badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-left: auto;
+      align-items: center;
+    }
+    .champ-badge {
+      background: #b45309;
+      color: #fef3c7;
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 3px;
+      letter-spacing: .03em;
+    }
+
+    /* ── Stat bar ── */
+    .stat-bar {
+      background: #14532d;
+      border-bottom: 3px solid #166534;
+    }
+    .stat-bar-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+    }
+    .stat-item {
+      flex: 1;
+      padding: 10px 16px;
+      border-right: 1px solid #166534;
+      text-align: center;
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-val {
+      font-size: 22px;
+      font-weight: bold;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      line-height: 1;
+    }
+    .stat-lbl {
+      font-size: 10px;
+      color: #86efac;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      font-family: Arial, sans-serif;
+      margin-top: 3px;
+    }
+
+    /* ── Nav ── */
+    nav {
+      background: #fff;
+      border-bottom: 2px solid #d1d5db;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      overflow-x: auto;
+    }
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      white-space: nowrap;
+    }
+    .tab-btn {
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      background: none;
+      border: none;
+      padding: 12px 20px;
+      cursor: pointer;
+      color: #6b7280;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      flex-shrink: 0;
+    }
+    .tab-btn:hover { color: #1a3a2a; }
+    .tab-btn.active { color: #1a3a2a; border-bottom-color: #1a3a2a; }
+
+    /* ── Main content ── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Section headers ── */
+    .section-header {
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      color: #1a3a2a;
+      border-bottom: 2px solid #1a3a2a;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    /* ── Tables ── */
+    .tbl-wrap { overflow-x: auto; margin-bottom: 32px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+    }
+    thead th {
+      background: #1a3a2a;
+      color: #d1fae5;
+      text-align: center;
+      padding: 7px 10px;
+      font-size: 11px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+    }
+    thead th:hover { background: #14532d; }
+    thead th.sort-asc::after  { content: ' ▲'; font-size: 9px; }
+    thead th.sort-desc::after { content: ' ▼'; font-size: 9px; }
+    thead th.no-sort { cursor: default; }
+    tbody tr:nth-child(even) { background: #f0f4f0; }
+    tbody tr:hover { background: #d1fae5; }
+    tbody td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: center;
+      white-space: nowrap;
+    }
+    tbody td.left { text-align: left; }
+    tfoot td {
+      background: #1a3a2a;
+      color: #fff;
+      padding: 7px 10px;
+      font-weight: bold;
+      text-align: center;
+      font-size: 12px;
+    }
+    tfoot td.left { text-align: left; }
+
+    /* Outcome colors */
+    .win  { color: #166534; font-weight: bold; }
+    .loss { color: #991b1b; font-weight: bold; }
+    .tie  { color: #374151; font-weight: bold; }
+    tr.champ-row td { background: #fef3c7 !important; }
+    tr.champ-row:hover td { background: #fde68a !important; }
+    .champ-star { color: #b45309; }
+
+    /* ── Trophy case ── */
+    .trophy-case {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+    .trophy-card {
+      background: linear-gradient(135deg, #78350f, #b45309);
+      color: #fef3c7;
+      border-radius: 6px;
+      padding: 14px 18px;
+      min-width: 160px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,.2);
+    }
+    .trophy-icon { font-size: 28px; line-height: 1; margin-bottom: 6px; }
+    .trophy-season { font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; }
+    .trophy-opp { font-family: Arial, sans-serif; font-size: 11px; color: #fde68a; margin-top: 3px; }
+    .trophy-score { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; margin-top: 4px; }
+
+    /* ── Filters ── */
+    .filters {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .filters label { font-family: Arial, sans-serif; font-size: 12px; color: #374151; }
+    .filters select, .filters input {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      padding: 5px 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      background: #fff;
+      color: #1a1a1a;
+    }
+
+    /* ── Two-col layout on overview ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+    @media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── Fun facts ── */
+    .facts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .fact-card {
+      background: #fff;
+      border: 1px solid #d1d5db;
+      border-left: 4px solid #1a3a2a;
+      border-radius: 4px;
+      padding: 12px 14px;
+    }
+    .fact-val { font-size: 22px; font-weight: bold; color: #1a3a2a; font-family: Arial, sans-serif; }
+    .fact-lbl { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: .07em; font-family: Arial, sans-serif; margin-top: 2px; }
+    .fact-sub { font-size: 11px; color: #374151; font-family: Arial, sans-serif; margin-top: 2px; }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      color: #9ca3af;
+      border-top: 1px solid #e5e7eb;
+      margin-top: 32px;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 640px) {
+      .team-name { font-size: 22px; }
+      .header-record { font-size: 11px; }
+
+      .champ-badges { margin-left: 0; width: 100%; margin-top: 8px; }
+
+      /* Stat bar: 3 across on mobile */
+      .stat-bar-inner { grid-template-columns: repeat(3, 1fr); }
+      .stat-item { border-right: 1px solid #166534; border-bottom: 1px solid #166534; }
+      .stat-item:nth-child(3), .stat-item:nth-child(6) { border-right: none; }
+      .stat-item:nth-child(4), .stat-item:nth-child(5), .stat-item:nth-child(6) { border-bottom: none; }
+      .stat-val { font-size: 16px; }
+      .stat-lbl { font-size: 9px; }
+
+      /* Tables: horizontal scroll with visual hint */
+      .tbl-wrap {
+        position: relative;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+      }
+      table { font-size: 12px; }
+      thead th { font-size: 10px; padding: 6px 8px; }
+      tbody td { padding: 5px 8px; }
+
+      /* Filters stack */
+      .filters { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .filters select, .filters input { width: 100%; }
+
+      /* Trophy case: 2 across */
+      .trophy-card { min-width: calc(50% - 6px); flex: 1; }
+      .trophy-icon { font-size: 22px; }
+      .trophy-season { font-size: 13px; }
+
+      /* Facts: 2 across */
+      .facts-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .fact-val { font-size: 18px; }
+
+      main { padding: 16px 12px; }
+      .section-header { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <div class="site-title">Pro Kickball Reference · Madison, WI</div>
+      <div class="team-name">Vaxxed and Waxxed</div>
+      <div class="header-record">Est. Summer 2021 · Demetral Park &amp; Olbrich Park</div>
+    </div>
+    <div class="champ-badges" id="champBadges"></div>
+  </div>
+</header>
+
+<div class="stat-bar">
+  <div class="stat-bar-inner">
+    <div class="stat-item"><div class="stat-val" id="sbRecord"></div><div class="stat-lbl">All-Time Record</div></div>
+    <div class="stat-item"><div class="stat-val" id="sbWinPct"></div><div class="stat-lbl">Win %</div></div>
+    <div class="stat-item"><div class="stat-val" id="sbChamps"></div><div class="stat-lbl">Championships</div></div>
+    <div class="stat-item"><div class="stat-val" id="sbRS"></div><div class="stat-lbl">Runs Scored</div></div>
+    <div class="stat-item"><div class="stat-val" id="sbRA"></div><div class="stat-lbl">Runs Allowed</div></div>
+    <div class="stat-item"><div class="stat-val" id="sbDiff"></div><div class="stat-lbl">Run Differential</div></div>
+  </div>
+</div>
+
+<nav>
+  <div class="nav-inner">
+    <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+    <button class="tab-btn" onclick="showTab('gamelog')">Game Log</button>
+    <button class="tab-btn" onclick="showTab('opponents')">vs. Opponents</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW TAB -->
+  <div class="tab-panel active" id="tab-overview">
+
+    <div class="section-header">🏆 Championship Trophy Case</div>
+    <div class="trophy-case" id="trophyCase"></div>
+
+    <div class="section-header">By the Numbers</div>
+    <div class="facts-grid" id="factsGrid"></div>
+
+    <div class="section-header">Season-by-Season Records</div>
+    <div class="tbl-wrap">
+      <table id="seasonsTable">
+        <thead>
+          <tr>
+            <th class="no-sort" style="text-align:left">Season</th>
+            <th>W</th><th>L</th><th>T</th>
+            <th>Win%</th>
+            <th>RS</th><th>RA</th><th>Diff</th>
+            <th>RS/G</th><th>RA/G</th>
+            <th>Seed</th><th>Teams</th>
+            <th class="no-sort" style="text-align:left;min-width:220px">Playoff Result</th>
+          </tr>
+        </thead>
+        <tbody id="seasonsTbody"></tbody>
+        <tfoot id="seasonsTfoot"></tfoot>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- GAME LOG TAB -->
+  <div class="tab-panel" id="tab-gamelog">
+    <div class="filters">
+      <label>Season: <select id="seasonFilter" onchange="renderGameLog()">
+        <option value="">All Seasons</option>
+      </select></label>
+      <label>Result: <select id="outcomeFilter" onchange="renderGameLog()">
+        <option value="">All</option>
+        <option value="Win">Wins</option>
+        <option value="Loss">Losses</option>
+        <option value="Tie">Ties</option>
+      </select></label>
+      <label>Opponent: <input type="text" id="oppFilter" placeholder="Search…" oninput="renderGameLog()" style="width:160px"></label>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left">#</th>
+            <th style="text-align:left">Season</th>
+            <th style="text-align:left">Date</th>
+            <th style="text-align:left;min-width:200px">Opponent</th>
+            <th>Result</th>
+            <th>Score</th>
+            <th>RS</th><th>RA</th><th>Margin</th>
+          </tr>
+        </thead>
+        <tbody id="gameLogTbody"></tbody>
+        <tfoot id="gameLogTfoot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- OPPONENTS TAB -->
+  <div class="tab-panel" id="tab-opponents">
+    <div class="section-header">All-Time Records vs. Opponents</div>
+    <div class="tbl-wrap">
+      <table id="oppTable">
+        <thead>
+          <tr>
+            <th class="no-sort" style="text-align:left;min-width:200px">Opponent</th>
+            <th>GP</th><th>W</th><th>L</th><th>T</th>
+            <th>Win%</th>
+            <th>RS</th><th>RA</th><th>Diff</th>
+            <th>Last Played</th>
+          </tr>
+        </thead>
+        <tbody id="oppTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Pro Kickball Reference · Vaxxed and Waxxed · Madison, WI · Data through Summer 2026
+</footer>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+const SEASONS = [
+  { season:'Summer 2021', w:2, l:5, t:0, rs:29,  ra:33,  seed:7, teams:9,  outcome:'Loss in Quarterfinal',  result:'6–9',      opp:'Hold My Beer',               champ:false },
+  { season:'Fall 2021',   w:5, l:1, t:1, rs:50,  ra:26,  seed:2, teams:12, outcome:'Loss in Championship',  result:'9–10',     opp:'The Middle',                 champ:false },
+  { season:'Spring 2022', w:4, l:3, t:1, rs:47,  ra:55,  seed:2, teams:4,  outcome:'Loss in Championship',  result:'0–5',      opp:'Globo Gym',                  champ:false },
+  { season:'Summer 2022', w:7, l:1, t:0, rs:64,  ra:23,  seed:2, teams:6,  outcome:'WIN Championship',      result:'2–1',      opp:"Kick Us While We're Down",   champ:true  },
+  { season:'Fall 2022',   w:5, l:2, t:0, rs:64,  ra:30,  seed:2, teams:7,  outcome:'Loss in Semifinals',    result:'4–11',     opp:'Pirates',                    champ:false },
+  { season:'Spring 2023', w:6, l:2, t:0, rs:85,  ra:23,  seed:2, teams:5,  outcome:'Loss in Championship',  result:'1–8',      opp:'Cafe Tropical',              champ:false },
+  { season:'Summer 2023', w:7, l:1, t:0, rs:69,  ra:34,  seed:1, teams:5,  outcome:'Loss in Championship',  result:'1–5',      opp:'Pirates',                    champ:false },
+  { season:'Fall 2023',   w:9, l:0, t:0, rs:99,  ra:29,  seed:1, teams:8,  outcome:'WIN Championship',      result:'3–2',      opp:'Pirates',                    champ:true  },
+  { season:'Spring 2024', w:5, l:2, t:0, rs:40,  ra:12,  seed:2, teams:4,  outcome:'WIN Championship',      result:'4–0',      opp:"Kick Us While We're Down",   champ:true  },
+  { season:'Summer 2024', w:8, l:0, t:0, rs:79,  ra:17,  seed:1, teams:7,  outcome:'WIN Championship',      result:'4–2',      opp:'Average & Savage',           champ:true  },
+  { season:'Fall 2024',   w:5, l:3, t:0, rs:69,  ra:26,  seed:3, teams:6,  outcome:'Loss in Championship',  result:'2–5',      opp:'Average & Savage',           champ:false },
+  { season:'Spring 2025', w:5, l:1, t:1, rs:34,  ra:13,  seed:1, teams:6,  outcome:'Loss in Semifinals',    result:'2–5',      opp:'Just the Tipsy',             champ:false },
+  { season:'Summer 2025', w:6, l:1, t:0, rs:36,  ra:12,  seed:1, teams:5,  outcome:'WIN Championship',      result:'1–0',      opp:'Average & Savage',           champ:true  },
+  { season:'Fall 2025',   w:3, l:3, t:2, rs:31,  ra:30,  seed:4, teams:5,  outcome:'Loss in Semifinals',    result:'0–2',      opp:'Team Gnar Gnar',             champ:false },
+  { season:'Spring 2026', w:5, l:4, t:0, rs:40,  ra:33,  seed:3, teams:6,  outcome:'Loss in Championship',  result:'4–8',      opp:'Just the Tipsy',             champ:false },
+  { season:'Summer 2026', w:7, l:0, t:0, rs:46,  ra:13,  seed:1, teams:6,  outcome:'WIN Championship',      result:'4–3 (11th inning)',  opp:'Just the Tipsy',  champ:true  },
+];
+
+const GAMES = [
+  {season:'Summer 2021',date:'2021-06-15',opp:'Safer at Home (Plate)',outcome:'Loss',score:'1 – 10',rs:1,ra:10,margin:-9},
+  {season:'Summer 2021',date:'2021-06-22',opp:'Scissor Me Timbers',outcome:'Loss',score:'1 – 2',rs:1,ra:2,margin:-1},
+  {season:'Summer 2021',date:'2021-06-22',opp:'Vegas Gold',outcome:'Win',score:'9 – 1',rs:9,ra:1,margin:8},
+  {season:'Summer 2021',date:'2021-07-06',opp:'Hold My Beer',outcome:'Loss',score:'4 – 10',rs:4,ra:10,margin:-6},
+  {season:'Summer 2021',date:'2021-07-13',opp:'Spring Chickens',outcome:'Win',score:'8 – 1',rs:8,ra:1,margin:7},
+  {season:'Summer 2021',date:'2021-07-20',opp:'The Starlets',outcome:'Loss',score:'Forfeit',rs:0,ra:0,margin:0},
+  {season:'Summer 2021',date:'2021-07-27',opp:'Hold My Beer',outcome:'Loss',score:'6 – 9',rs:6,ra:9,margin:-3},
+  {season:'Fall 2021',date:'2021-09-09',opp:'Cornjerkers',outcome:'Win',score:'8 – 0',rs:8,ra:0,margin:8},
+  {season:'Fall 2021',date:'2021-09-16',opp:'Fo Life',outcome:'Tie',score:'9 – 9',rs:9,ra:9,margin:0},
+  {season:'Fall 2021',date:'2021-09-23',opp:'Kicking and Screaming',outcome:'Win',score:'3 – 2',rs:3,ra:2,margin:1},
+  {season:'Fall 2021',date:'2021-09-30',opp:'Old Balls',outcome:'Win',score:'9 – 1',rs:9,ra:1,margin:8},
+  {season:'Fall 2021',date:'2021-10-14',opp:'The Kicklers',outcome:'Win',score:'8 – 1',rs:8,ra:1,margin:7},
+  {season:'Fall 2021',date:'2021-10-21',opp:'Fo Life',outcome:'Win',score:'4 – 3',rs:4,ra:3,margin:1},
+  {season:'Fall 2021',date:'2021-10-21',opp:'The Middle',outcome:'Loss',score:'9 – 10',rs:9,ra:10,margin:-1},
+  {season:'Spring 2022',date:'2022-04-27',opp:'Trojans',outcome:'Tie',score:'3 – 3',rs:3,ra:3,margin:0},
+  {season:'Spring 2022',date:'2022-05-04',opp:'MC Ballers',outcome:'Win',score:'7 – 6',rs:7,ra:6,margin:1},
+  {season:'Spring 2022',date:'2022-05-11',opp:'Trojans',outcome:'Win',score:'8 – 5',rs:8,ra:5,margin:3},
+  {season:'Spring 2022',date:'2022-05-18',opp:'MC Ballers',outcome:'Win',score:'7 – 6',rs:7,ra:6,margin:1},
+  {season:'Spring 2022',date:'2022-06-01',opp:'Red Ball and Vodka (Globo Gym)',outcome:'Loss',score:'1 – 16',rs:1,ra:16,margin:-15},
+  {season:'Spring 2022',date:'2022-06-22',opp:'Red Ball and Vodka (Globo Gym)',outcome:'Loss',score:'7 – 8',rs:7,ra:8,margin:-1},
+  {season:'Spring 2022',date:'2022-06-29',opp:'Trojans',outcome:'Win',score:'14 – 6',rs:14,ra:6,margin:8},
+  {season:'Spring 2022',date:'2022-07-06',opp:'Red Ball and Vodka (Globo Gym)',outcome:'Loss',score:'0 – 5',rs:0,ra:5,margin:-5},
+  {season:'Summer 2022',date:'2022-07-13',opp:'MC Ballers',outcome:'Win',score:'6 – 1',rs:6,ra:1,margin:5},
+  {season:'Summer 2022',date:'2022-07-20',opp:"Kick Us While We're Down",outcome:'Win',score:'11 – 6',rs:11,ra:6,margin:5},
+  {season:'Summer 2022',date:'2022-07-27',opp:'Not Your Average Joes',outcome:'Win',score:'6 – 3',rs:6,ra:3,margin:3},
+  {season:'Summer 2022',date:'2022-08-10',opp:'Trojans',outcome:'Win',score:'18 – 3',rs:18,ra:3,margin:15},
+  {season:'Summer 2022',date:'2022-08-17',opp:'Red Ball and Vodka (Globo Gym)',outcome:'Loss',score:'2 – 6',rs:2,ra:6,margin:-4},
+  {season:'Summer 2022',date:'2022-08-24',opp:'Trojans',outcome:'Win',score:'17 – 2',rs:17,ra:2,margin:15},
+  {season:'Summer 2022',date:'2022-09-07',opp:'Not Your Average Joes',outcome:'Win',score:'2 – 1',rs:2,ra:1,margin:1},
+  {season:'Summer 2022',date:'2022-09-07',opp:"Kick Us While We're Down",outcome:'Win',score:'2 – 1',rs:2,ra:1,margin:1},
+  {season:'Fall 2022',date:'2022-09-14',opp:'Red Ball and Vodka (Globo Gym)',outcome:'Loss',score:'4 – 11',rs:4,ra:11,margin:-7},
+  {season:'Fall 2022',date:'2022-09-21',opp:'Suck Our Kicks (Pirates)',outcome:'Win',score:'10 – 3',rs:10,ra:3,margin:7},
+  {season:'Fall 2022',date:'2022-09-21',opp:'Team Gnar Gnar',outcome:'Win',score:'15 – 0',rs:15,ra:0,margin:15},
+  {season:'Fall 2022',date:'2022-09-28',opp:'MC Ballers',outcome:'Win',score:'5 – 4',rs:5,ra:4,margin:1},
+  {season:'Fall 2022',date:'2022-10-05',opp:'Alive and Kicking',outcome:'Win',score:'11 – 0',rs:11,ra:0,margin:11},
+  {season:'Fall 2022',date:'2022-10-19',opp:'Booze on First',outcome:'Win',score:'15 – 1',rs:15,ra:1,margin:14},
+  {season:'Fall 2022',date:'2022-10-26',opp:'Suck Our Kicks (Pirates)',outcome:'Loss',score:'4 – 11',rs:4,ra:11,margin:-7},
+  {season:'Spring 2023',date:'2023-04-26',opp:"Kick Us While We're Down",outcome:'Win',score:'11 – 2',rs:11,ra:2,margin:9},
+  {season:'Spring 2023',date:'2023-05-03',opp:'Cafe Tropical',outcome:'Loss',score:'2 – 3',rs:2,ra:3,margin:-1},
+  {season:'Spring 2023',date:'2023-05-10',opp:'MC Ballers',outcome:'Win',score:'18 – 4',rs:18,ra:4,margin:14},
+  {season:'Spring 2023',date:'2023-05-17',opp:'Quack Daddies & Lady Penguins',outcome:'Win',score:'14 – 0',rs:14,ra:0,margin:14},
+  {season:'Spring 2023',date:'2023-05-24',opp:'MC Ballers',outcome:'Win',score:'4 – 0',rs:4,ra:0,margin:4},
+  {season:'Spring 2023',date:'2023-05-31',opp:'Cut a Pitch',outcome:'Win',score:'17 – 5',rs:17,ra:5,margin:12},
+  {season:'Spring 2023',date:'2023-06-14',opp:'Cut a Pitch',outcome:'Win',score:'18 – 1',rs:18,ra:1,margin:17},
+  {season:'Spring 2023',date:'2023-06-14',opp:'Cafe Tropical',outcome:'Loss',score:'1 – 8',rs:1,ra:8,margin:-7},
+  {season:'Summer 2023',date:'2023-06-21',opp:"Kick Us While We're Down",outcome:'Win',score:'5 – 2',rs:5,ra:2,margin:3},
+  {season:'Summer 2023',date:'2023-07-19',opp:'Kicks Out for Harambe',outcome:'Win',score:'16 – 6',rs:16,ra:6,margin:10},
+  {season:'Summer 2023',date:'2023-08-02',opp:'Picked Last',outcome:'Win',score:'9 – 3',rs:9,ra:3,margin:6},
+  {season:'Summer 2023',date:'2023-08-09',opp:'Kick Cheney and the Shotguns (Pirates)',outcome:'Win',score:'13 – 7',rs:13,ra:7,margin:6},
+  {season:'Summer 2023',date:'2023-08-09',opp:'Picked Last',outcome:'Win',score:'9 – 5',rs:9,ra:5,margin:4},
+  {season:'Summer 2023',date:'2023-08-23',opp:'Kick Cheney and the Shotguns (Pirates)',outcome:'Win',score:'9 – 5',rs:9,ra:5,margin:4},
+  {season:'Summer 2023',date:'2023-08-30',opp:'Kicks Out for Harambe',outcome:'Win',score:'7 – 1',rs:7,ra:1,margin:6},
+  {season:'Summer 2023',date:'2023-08-30',opp:'Kick Cheney and the Shotguns (Pirates)',outcome:'Loss',score:'1 – 5',rs:1,ra:5,margin:-4},
+  {season:'Fall 2023',date:'2023-09-06',opp:'Trojans',outcome:'Win',score:'22 – 2',rs:22,ra:2,margin:20},
+  {season:'Fall 2023',date:'2023-09-06',opp:'Just the Tipsy',outcome:'Win',score:'10 – 5',rs:10,ra:5,margin:5},
+  {season:'Fall 2023',date:'2023-09-13',opp:"Kick Us While We're Down",outcome:'Win',score:'7 – 5',rs:7,ra:5,margin:2},
+  {season:'Fall 2023',date:'2023-09-20',opp:'MC Ballers',outcome:'Win',score:'15 – 2',rs:15,ra:2,margin:13},
+  {season:'Fall 2023',date:'2023-09-27',opp:'The Sharks',outcome:'Win',score:'10 – 4',rs:10,ra:4,margin:6},
+  {season:'Fall 2023',date:'2023-10-04',opp:'Kick Cheney and the Shotguns (Pirates)',outcome:'Win',score:'10 – 4',rs:10,ra:4,margin:6},
+  {season:'Fall 2023',date:'2023-10-11',opp:'Trojans',outcome:'Win',score:'13 – 2',rs:13,ra:2,margin:11},
+  {season:'Fall 2023',date:'2023-10-18',opp:"Kick Us While We're Down",outcome:'Win',score:'9 – 3',rs:9,ra:3,margin:6},
+  {season:'Fall 2023',date:'2023-10-18',opp:'Kick Cheney and the Shotguns (Pirates)',outcome:'Win',score:'3 – 2',rs:3,ra:2,margin:1},
+  {season:'Spring 2024',date:'2024-04-24',opp:'MC Ballers',outcome:'Win',score:'7 – 0',rs:7,ra:0,margin:7},
+  {season:'Spring 2024',date:'2024-05-01',opp:"Kick Us While We're Down",outcome:'Loss',score:'2 – 3',rs:2,ra:3,margin:-1},
+  {season:'Spring 2024',date:'2024-05-08',opp:"Kick Us While We're Down",outcome:'Loss',score:'4 – 5',rs:4,ra:5,margin:-1},
+  {season:'Spring 2024',date:'2024-05-15',opp:'MC Ballers',outcome:'Win',score:'18 – 1',rs:18,ra:1,margin:17},
+  {season:'Spring 2024',date:'2024-05-22',opp:'Highly Educated, Poorly Executed',outcome:'Win',score:'1 – 0',rs:1,ra:0,margin:1},
+  {season:'Spring 2024',date:'2024-06-26',opp:'MC Ballers',outcome:'Win',score:'4 – 3',rs:4,ra:3,margin:1},
+  {season:'Spring 2024',date:'2024-07-03',opp:"Kick Us While We're Down",outcome:'Win',score:'4 – 0',rs:4,ra:0,margin:4},
+  {season:'Summer 2024',date:'2024-07-10',opp:"Kick Us While We're Down",outcome:'Win',score:'7 – 0',rs:7,ra:0,margin:7},
+  {season:'Summer 2024',date:'2024-07-17',opp:'Pulse Pounders',outcome:'Win',score:'9 – 1',rs:9,ra:1,margin:8},
+  {season:'Summer 2024',date:'2024-07-24',opp:'PIMPS',outcome:'Win',score:'18 – 1',rs:18,ra:1,margin:17},
+  {season:'Summer 2024',date:'2024-07-31',opp:'Kickers with a Drinking Problem!',outcome:'Win',score:'12 – 3',rs:12,ra:3,margin:9},
+  {season:'Summer 2024',date:'2024-07-31',opp:'Average and Savage',outcome:'Win',score:'11 – 4',rs:11,ra:4,margin:7},
+  {season:'Summer 2024',date:'2024-08-07',opp:'The Sharks',outcome:'Win',score:'13 – 2',rs:13,ra:2,margin:11},
+  {season:'Summer 2024',date:'2024-08-28',opp:'The Sharks',outcome:'Win',score:'5 – 4',rs:5,ra:4,margin:1},
+  {season:'Summer 2024',date:'2024-08-28',opp:'Average and Savage',outcome:'Win',score:'4 – 2',rs:4,ra:2,margin:2},
+  {season:'Fall 2024',date:'2024-09-04',opp:'The Sharks',outcome:'Win',score:'23 – 2',rs:23,ra:2,margin:21},
+  {season:'Fall 2024',date:'2024-09-04',opp:'Bar flies',outcome:'Win',score:'21 – 1',rs:21,ra:1,margin:20},
+  {season:'Fall 2024',date:'2024-09-11',opp:'Team Gnar Gnar',outcome:'Win',score:'10 – 0',rs:10,ra:0,margin:10},
+  {season:'Fall 2024',date:'2024-09-25',opp:'Average and Savage',outcome:'Loss',score:'0 – 7',rs:0,ra:7,margin:-7},
+  {season:'Fall 2024',date:'2024-10-02',opp:'Just the Tipsy',outcome:'Loss',score:'2 – 3',rs:2,ra:3,margin:-1},
+  {season:'Fall 2024',date:'2024-10-09',opp:'Average and Savage',outcome:'Win',score:'4 – 3',rs:4,ra:3,margin:1},
+  {season:'Fall 2024',date:'2024-10-16',opp:'Just the Tipsy',outcome:'Win',score:'7 – 5',rs:7,ra:5,margin:2},
+  {season:'Fall 2024',date:'2024-10-16',opp:'Average and Savage',outcome:'Loss',score:'2 – 5',rs:2,ra:5,margin:-3},
+  {season:'Spring 2025',date:'2025-04-16',opp:'Average and Savage',outcome:'Win',score:'4 – 1',rs:4,ra:1,margin:3},
+  {season:'Spring 2025',date:'2025-04-23',opp:'KickTok Stars',outcome:'Win',score:'14 – 3',rs:14,ra:3,margin:11},
+  {season:'Spring 2025',date:'2025-04-30',opp:"Kick Us While We're Down",outcome:'Win',score:'6 – 1',rs:6,ra:1,margin:5},
+  {season:'Spring 2025',date:'2025-05-07',opp:'Just the Tipsy',outcome:'Tie',score:'1 – 1',rs:1,ra:1,margin:0},
+  {season:'Spring 2025',date:'2025-05-14',opp:'Kick Me Baby One More Time',outcome:'Win',score:'4 – 0',rs:4,ra:0,margin:4},
+  {season:'Spring 2025',date:'2025-05-28',opp:"Kick Us While We're Down",outcome:'Win',score:'3 – 2',rs:3,ra:2,margin:1},
+  {season:'Spring 2025',date:'2025-06-04',opp:'Just the Tipsy',outcome:'Loss',score:'2 – 5',rs:2,ra:5,margin:-3},
+  {season:'Summer 2025',date:'2025-06-25',opp:'On Wednesdays We Wear Pink',outcome:'Win',score:'3 – 1',rs:3,ra:1,margin:2},
+  {season:'Summer 2025',date:'2025-07-02',opp:'Kickin bass!',outcome:'Win',score:'13 – 0',rs:13,ra:0,margin:13},
+  {season:'Summer 2025',date:'2025-07-09',opp:'Just the Tipsy',outcome:'Win',score:'4 – 1',rs:4,ra:1,margin:3},
+  {season:'Summer 2025',date:'2025-08-06',opp:'Just the Tipsy',outcome:'Loss',score:'3 – 6',rs:3,ra:6,margin:-3},
+  {season:'Summer 2025',date:'2025-08-06',opp:'Average and Savage',outcome:'Win',score:'5 – 4',rs:5,ra:4,margin:1},
+  {season:'Summer 2025',date:'2025-08-13',opp:'On Wednesdays We Wear Pink',outcome:'Win',score:'7 – 0',rs:7,ra:0,margin:7},
+  {season:'Summer 2025',date:'2025-08-20',opp:'Average and Savage',outcome:'Win',score:'1 – 0',rs:1,ra:0,margin:1},
+  {season:'Fall 2025',date:'2025-08-27',opp:'Fo Life',outcome:'Tie',score:'10 – 10',rs:10,ra:10,margin:0},
+  {season:'Fall 2025',date:'2025-09-03',opp:'Just the Tipsy',outcome:'Win',score:'2 – 1',rs:2,ra:1,margin:1},
+  {season:'Fall 2025',date:'2025-09-10',opp:'Team Gnar Gnar',outcome:'Loss',score:'2 – 5',rs:2,ra:5,margin:-3},
+  {season:'Fall 2025',date:'2025-09-17',opp:'Average and Savage',outcome:'Win',score:'7 – 4',rs:7,ra:4,margin:3},
+  {season:'Fall 2025',date:'2025-09-24',opp:'Average and Savage',outcome:'Tie',score:'4 – 4',rs:4,ra:4,margin:0},
+  {season:'Fall 2025',date:'2025-10-01',opp:'Team Gnar Gnar',outcome:'Loss',score:'2 – 4',rs:2,ra:4,margin:-2},
+  {season:'Fall 2025',date:'2025-10-08',opp:'Fo Life',outcome:'Win',score:'4 – 0',rs:4,ra:0,margin:4},
+  {season:'Fall 2025',date:'2025-10-08',opp:'Team Gnar Gnar',outcome:'Loss',score:'0 – 2',rs:0,ra:2,margin:-2},
+  {season:'Spring 2026',date:'2026-04-08',opp:'Fo Life',outcome:'Win',score:'7 – 4',rs:7,ra:4,margin:3},
+  {season:'Spring 2026',date:'2026-04-22',opp:'Average and Savage',outcome:'Loss',score:'4 – 6',rs:4,ra:6,margin:-2},
+  {season:'Spring 2026',date:'2026-04-29',opp:'Fresh Kick of Ball Air',outcome:'Loss',score:'1 – 2',rs:1,ra:2,margin:-1},
+  {season:'Spring 2026',date:'2026-05-06',opp:'Just the Tipsy',outcome:'Loss',score:'1 – 2',rs:1,ra:2,margin:-1},
+  {season:'Spring 2026',date:'2026-05-13',opp:'Average and Savage',outcome:'Win',score:'4 – 2',rs:4,ra:2,margin:2},
+  {season:'Spring 2026',date:'2026-05-20',opp:"Kick Us While We're Down",outcome:'Win',score:'4 – 3',rs:4,ra:3,margin:1},
+  {season:'Spring 2026',date:'2026-05-27',opp:"Kick Us While We're Down",outcome:'Win',score:'4 – 3',rs:4,ra:3,margin:1},
+  {season:'Spring 2026',date:'2026-06-03',opp:'Fresh Kick of Ball Air',outcome:'Win',score:'11 – 3',rs:11,ra:3,margin:8},
+  {season:'Spring 2026',date:'2026-06-03',opp:'Just the Tipsy',outcome:'Loss',score:'4 – 8',rs:4,ra:8,margin:-4},
+  {season:'Summer 2026',date:'2026-07-01',opp:'Hot Cuts!',outcome:'Win',score:'7 – 3',rs:7,ra:3,margin:4},
+  {season:'Summer 2026',date:'2026-07-08',opp:'Average and Savage',outcome:'Win',score:'5 – 2',rs:5,ra:2,margin:3},
+  {season:'Summer 2026',date:'2026-07-15',opp:'Average and Savage',outcome:'Win',score:'8 – 3',rs:8,ra:3,margin:5},
+  {season:'Summer 2026',date:'2026-07-22',opp:"Kick Us While We're Down",outcome:'Win',score:'8 – 0',rs:8,ra:0,margin:8},
+  {season:'Summer 2026',date:'2026-07-29',opp:'Fo Life',outcome:'Win',score:'6 – 2',rs:6,ra:2,margin:4},
+  {season:'Summer 2026',date:'2026-08-05',opp:'Hot Cuts!',outcome:'Win',score:'8 – 0',rs:8,ra:0,margin:8},
+  {season:'Summer 2026',date:'2026-08-12',opp:'Just the Tipsy',outcome:'Win',score:'4 – 3',rs:4,ra:3,margin:1},
+];
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function pct(w, l, t) {
+  const gp = w + l + t;
+  if (!gp) return '—';
+  return ((w + t * 0.5) / gp).toFixed(3).replace(/^0/, '');
+}
+
+function fmt(n, dec = 2) {
+  return n.toFixed(dec);
+}
+
+function outcomeClass(o) {
+  if (o === 'Win') return 'win';
+  if (o === 'Loss') return 'loss';
+  return 'tie';
+}
+
+// ── Totals ─────────────────────────────────────────────────────────────────────
+
+const totW  = SEASONS.reduce((s,r) => s + r.w, 0);
+const totL  = SEASONS.reduce((s,r) => s + r.l, 0);
+const totT  = SEASONS.reduce((s,r) => s + r.t, 0);
+const totRS = SEASONS.reduce((s,r) => s + r.rs, 0);
+const totRA = SEASONS.reduce((s,r) => s + r.ra, 0);
+const totG  = totW + totL + totT;
+const champWins = SEASONS.filter(r => r.champ).length;
+const champApps = SEASONS.filter(r => r.outcome.startsWith('WIN') || r.outcome.startsWith('Loss in Champ')).length;
+const perfSeasons = SEASONS.filter(r => r.l === 0 && r.t === 0).map(r => r.season);
+
+// ── Stat bar ───────────────────────────────────────────────────────────────────
+
+document.getElementById('sbRecord').textContent  = `${totW}–${totL}–${totT}`;
+document.getElementById('sbWinPct').textContent   = pct(totW, totL, totT);
+document.getElementById('sbChamps').textContent   = `${champWins}`;
+document.getElementById('sbRS').textContent       = totRS;
+document.getElementById('sbRA').textContent       = totRA;
+document.getElementById('sbDiff').textContent     = `+${totRS - totRA}`;
+
+// ── Champ badges ───────────────────────────────────────────────────────────────
+
+const champSeasons = SEASONS.filter(r => r.champ);
+document.getElementById('champBadges').innerHTML =
+  champSeasons.map(r => `<div class="champ-badge">🏆 ${r.season}</div>`).join('');
+
+// ── Trophy case ────────────────────────────────────────────────────────────────
+
+document.getElementById('trophyCase').innerHTML = champSeasons.map(r => `
+  <div class="trophy-card">
+    <div class="trophy-icon">🏆</div>
+    <div class="trophy-season">${r.season}</div>
+    <div class="trophy-opp">def. ${r.opp}</div>
+    <div class="trophy-score">${r.result}</div>
+  </div>
+`).join('');
+
+// ── Fun facts ──────────────────────────────────────────────────────────────────
+
+const biggestWin  = [...GAMES].sort((a,b) => b.margin - a.margin)[0];
+const biggestLoss = [...GAMES].sort((a,b) => a.margin - b.margin)[0];
+const mostRS      = [...GAMES].sort((a,b) => b.rs - a.rs)[0];
+
+// Longest win streak
+let maxStreak = 0, curStreak = 0, streakStart = '', streakEnd = '';
+let curStart = '';
+GAMES.forEach(g => {
+  if (g.outcome === 'Win') {
+    if (curStreak === 0) curStart = g.date;
+    curStreak++;
+    if (curStreak > maxStreak) { maxStreak = curStreak; streakStart = curStart; streakEnd = g.date; }
+  } else { curStreak = 0; }
+});
+
+document.getElementById('factsGrid').innerHTML = `
+  <div class="fact-card">
+    <div class="fact-val">${champWins}/${champApps}</div>
+    <div class="fact-lbl">Championship Record</div>
+    <div class="fact-sub">Won ${champWins} of ${champApps} appearances</div>
+  </div>
+  <div class="fact-card">
+    <div class="fact-val">${perfSeasons.length}</div>
+    <div class="fact-lbl">Perfect Regular Seasons</div>
+    <div class="fact-sub">${perfSeasons.join(', ')}</div>
+  </div>
+  <div class="fact-card">
+    <div class="fact-val">${maxStreak}W</div>
+    <div class="fact-lbl">Longest Win Streak</div>
+    <div class="fact-sub">${streakStart} – ${streakEnd}</div>
+  </div>
+  <div class="fact-card">
+    <div class="fact-val">${biggestWin.score}</div>
+    <div class="fact-lbl">Biggest Win</div>
+    <div class="fact-sub">vs. ${biggestWin.opp} (${biggestWin.season})</div>
+  </div>
+  <div class="fact-card">
+    <div class="fact-val">${biggestLoss.score}</div>
+    <div class="fact-lbl">Biggest Loss</div>
+    <div class="fact-sub">vs. ${biggestLoss.opp} (${biggestLoss.season})</div>
+  </div>
+  <div class="fact-card">
+    <div class="fact-val">${mostRS.rs}</div>
+    <div class="fact-lbl">Most Runs in a Game</div>
+    <div class="fact-sub">vs. ${mostRS.opp} (${mostRS.date})</div>
+  </div>
+  <div class="fact-card">
+    <div class="fact-val">${fmt(totRS/totG, 1)}</div>
+    <div class="fact-lbl">Runs Scored per Game</div>
+    <div class="fact-sub">All-time average</div>
+  </div>
+  <div class="fact-card">
+    <div class="fact-val">${fmt(totRA/totG, 1)}</div>
+    <div class="fact-lbl">Runs Allowed per Game</div>
+    <div class="fact-sub">All-time average</div>
+  </div>
+`;
+
+// ── Seasons table ──────────────────────────────────────────────────────────────
+
+function renderSeasons() {
+  const tbody = document.getElementById('seasonsTbody');
+  tbody.innerHTML = SEASONS.map(r => {
+    const gp = r.w + r.l + r.t;
+    const isChamp = r.champ;
+    const outcomeClass = r.outcome.startsWith('WIN') ? 'win' : (r.outcome.startsWith('Loss') ? 'loss' : '');
+    return `<tr${isChamp ? ' class="champ-row"' : ''}>
+      <td class="left">${isChamp ? '<span class="champ-star">🏆</span> ' : ''}${r.season}</td>
+      <td class="win">${r.w}</td>
+      <td class="loss">${r.l}</td>
+      <td>${r.t}</td>
+      <td>${pct(r.w, r.l, r.t)}</td>
+      <td>${r.rs}</td>
+      <td>${r.ra}</td>
+      <td>${r.rs - r.ra >= 0 ? '+' : ''}${r.rs - r.ra}</td>
+      <td>${fmt(r.rs / gp)}</td>
+      <td>${fmt(r.ra / gp)}</td>
+      <td>${r.seed}</td>
+      <td>${r.teams}</td>
+      <td class="left ${outcomeClass}">${r.outcome}${r.outcome ? ` (${r.result} vs ${r.opp})` : ''}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('seasonsTfoot').innerHTML = `<tr>
+    <td class="left">Overall (${SEASONS.length} seasons)</td>
+    <td>${totW}</td><td>${totL}</td><td>${totT}</td>
+    <td>${pct(totW,totL,totT)}</td>
+    <td>${totRS}</td><td>${totRA}</td>
+    <td>+${totRS-totRA}</td>
+    <td>${fmt(totRS/totG)}</td>
+    <td>${fmt(totRA/totG)}</td>
+    <td>—</td><td>—</td><td class="left">—</td>
+  </tr>`;
+}
+renderSeasons();
+
+// ── Game log ───────────────────────────────────────────────────────────────────
+
+// Populate season filter
+const seasonNames = [...new Set(GAMES.map(g => g.season))];
+const sf = document.getElementById('seasonFilter');
+seasonNames.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sf.appendChild(o); });
+
+function renderGameLog() {
+  const filterSeason  = document.getElementById('seasonFilter').value;
+  const filterOutcome = document.getElementById('outcomeFilter').value;
+  const filterOpp     = document.getElementById('oppFilter').value.toLowerCase();
+
+  const filtered = GAMES.filter(g =>
+    (!filterSeason  || g.season === filterSeason) &&
+    (!filterOutcome || g.outcome === filterOutcome) &&
+    (!filterOpp     || g.opp.toLowerCase().includes(filterOpp))
+  );
+
+  const tbody = document.getElementById('gameLogTbody');
+  tbody.innerHTML = filtered.map((g, i) => `
+    <tr>
+      <td class="left">${i + 1}</td>
+      <td class="left">${g.season}</td>
+      <td class="left">${g.date}</td>
+      <td class="left">${g.opp}</td>
+      <td class="${outcomeClass(g.outcome)}">${g.outcome}</td>
+      <td>${g.score}</td>
+      <td>${g.rs}</td>
+      <td>${g.ra}</td>
+      <td>${g.margin > 0 ? '+' : ''}${g.margin}</td>
+    </tr>
+  `).join('');
+
+  const fw = filtered.filter(g => g.outcome === 'Win').length;
+  const fl = filtered.filter(g => g.outcome === 'Loss').length;
+  const ft = filtered.filter(g => g.outcome === 'Tie').length;
+  const fRS = filtered.reduce((s,g) => s + g.rs, 0);
+  const fRA = filtered.reduce((s,g) => s + g.ra, 0);
+  document.getElementById('gameLogTfoot').innerHTML = `<tr>
+    <td class="left" colspan="4">${filtered.length} games · ${fw}W ${fl}L ${ft}T · ${pct(fw,fl,ft)} Win%</td>
+    <td></td><td></td>
+    <td>${fRS}</td><td>${fRA}</td>
+    <td>${fRS-fRA >= 0 ? '+' : ''}${fRS-fRA}</td>
+  </tr>`;
+}
+renderGameLog();
+
+// ── Opponents table ────────────────────────────────────────────────────────────
+
+function renderOpponents() {
+  const map = {};
+  GAMES.forEach(g => {
+    if (!map[g.opp]) map[g.opp] = { w:0, l:0, t:0, rs:0, ra:0, last:'' };
+    const r = map[g.opp];
+    if (g.outcome === 'Win')  r.w++;
+    if (g.outcome === 'Loss') r.l++;
+    if (g.outcome === 'Tie')  r.t++;
+    r.rs += g.rs;
+    r.ra += g.ra;
+    if (g.date > r.last) r.last = g.date;
+  });
+
+  const rows = Object.entries(map)
+    .map(([opp, r]) => ({ opp, ...r, gp: r.w + r.l + r.t, diff: r.rs - r.ra, winPct: (r.w + r.t * 0.5) / (r.w + r.l + r.t) }))
+    .sort((a, b) => b.gp - a.gp || b.winPct - a.winPct);
+
+  document.getElementById('oppTbody').innerHTML = rows.map(r => `
+    <tr>
+      <td class="left">${r.opp}</td>
+      <td>${r.gp}</td>
+      <td class="win">${r.w}</td>
+      <td class="loss">${r.l}</td>
+      <td>${r.t}</td>
+      <td>${pct(r.w, r.l, r.t)}</td>
+      <td>${r.rs}</td>
+      <td>${r.ra}</td>
+      <td>${r.diff >= 0 ? '+' : ''}${r.diff}</td>
+      <td>${r.last}</td>
+    </tr>
+  `).join('');
+}
+renderOpponents();
+
+// ── Tab switching ──────────────────────────────────────────────────────────────
+
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>
