@@ -271,6 +271,21 @@
     .fact-lbl { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: .07em; font-family: Arial, sans-serif; margin-top: 2px; }
     .fact-sub { font-size: 11px; color: #374151; font-family: Arial, sans-serif; margin-top: 2px; }
 
+    /* ── Sponsor ── */
+    .sponsor-bar {
+      background: #111;
+      text-align: center;
+      padding: 10px 16px;
+    }
+    .sponsor-img {
+      max-height: 160px;
+      width: auto;
+      border-radius: 6px;
+    }
+    @media (max-width: 640px) {
+      .sponsor-img { max-height: 120px; }
+    }
+
     footer {
       text-align: center;
       padding: 24px;
@@ -348,6 +363,12 @@
     <div class="stat-item"><div class="stat-val" id="sbRA"></div><div class="stat-lbl">Runs Allowed</div></div>
     <div class="stat-item"><div class="stat-val" id="sbDiff"></div><div class="stat-lbl">Run Differential</div></div>
   </div>
+</div>
+
+<div class="sponsor-bar">
+  <a href="#" target="_blank">
+    <img src="slices-ad.jpg" alt="Slice's Bar & Grill — Your Madison Kickball Post-Game HQ" class="sponsor-img">
+  </a>
 </div>
 
 <nav>
