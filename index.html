@@ -296,6 +296,25 @@
       margin-top: 32px;
     }
 
+    /* ── Team chips ── */
+    .team-chip {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      padding: 5px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 16px;
+      background: #fff;
+      cursor: pointer;
+      color: #374151;
+      transition: background .15s, color .15s;
+      white-space: nowrap;
+    }
+    .team-chip:hover, .team-chip.active {
+      background: #1a3a2a;
+      color: #fff;
+      border-color: #1a3a2a;
+    }
+
     /* ── Mobile ── */
     @media (max-width: 640px) {
       .team-name { font-size: 22px; }
@@ -370,6 +389,7 @@
     <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
     <button class="tab-btn" onclick="showTab('gamelog')">Game Log</button>
     <button class="tab-btn" onclick="showTab('opponents')">vs. Opponents</button>
+    <button class="tab-btn" onclick="showTab('teams')">League Teams</button>
   </div>
 </nav>
 
@@ -457,6 +477,61 @@
     </div>
   </div>
 
+  <!-- TEAMS TAB -->
+  <div class="tab-panel" id="tab-teams">
+    <div class="filters" style="align-items:center;gap:12px">
+      <label style="font-family:Arial,sans-serif;font-size:13px;font-weight:bold;color:#1a3a2a">
+        Season:
+        <select id="leagueSeasonFilter" onchange="filterTeamsBySeason()"
+                style="margin-left:8px;font-size:13px;padding:6px 10px;border:1px solid #d1d5db;border-radius:4px;background:#fff">
+          <option value="">All Seasons</option>
+        </select>
+      </label>
+      <span id="teamCount" style="font-family:Arial,sans-serif;font-size:12px;color:#6b7280"></span>
+    </div>
+
+    <div id="teamListWrap" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px"></div>
+
+    <div id="teamDetail" style="display:none">
+      <div class="section-header" id="teamDetailName" style="margin-bottom:16px"></div>
+
+      <div class="facts-grid" id="teamStatCards" style="margin-bottom:24px"></div>
+
+      <div class="section-header">Season-by-Season</div>
+      <div class="tbl-wrap" style="margin-bottom:28px">
+        <table>
+          <thead>
+            <tr>
+              <th class="no-sort" style="text-align:left">Season</th>
+              <th>GP</th><th>W</th><th>L</th><th>T</th>
+              <th>Win%</th><th>RS</th><th>RA</th><th>Diff</th>
+            </tr>
+          </thead>
+          <tbody id="teamSeasonsTbody"></tbody>
+        </table>
+      </div>
+
+      <div class="section-header">Game Log</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left">#</th>
+              <th style="text-align:left">Season</th>
+              <th style="text-align:left">Date</th>
+              <th style="text-align:left;min-width:200px">Opponent</th>
+              <th>Result</th>
+              <th>Score</th>
+              <th>RS</th><th>RA</th><th>Margin</th>
+            </tr>
+          </thead>
+          <tbody id="teamGameLogTbody"></tbody>
+          <tfoot id="teamGameLogTfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <div class="sponsor-bar">
@@ -473,148 +548,150 @@
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 const SEASONS = [
-  { season:'Summer 2021', w:2, l:5, t:0, rs:29,  ra:33,  seed:7, teams:9,  outcome:'Loss in Quarterfinal',  result:'6–9',      opp:'Hold My Beer',               champ:false },
-  { season:'Fall 2021',   w:5, l:1, t:1, rs:50,  ra:26,  seed:2, teams:12, outcome:'Loss in Championship',  result:'9–10',     opp:'The Middle',                 champ:false },
-  { season:'Spring 2022', w:4, l:3, t:1, rs:47,  ra:55,  seed:2, teams:4,  outcome:'Loss in Championship',  result:'0–5',      opp:'Globo Gym',                  champ:false },
-  { season:'Summer 2022', w:7, l:1, t:0, rs:64,  ra:23,  seed:2, teams:6,  outcome:'WIN Championship',      result:'2–1',      opp:"Kick Us While We're Down",   champ:true  },
-  { season:'Fall 2022',   w:5, l:2, t:0, rs:64,  ra:30,  seed:2, teams:7,  outcome:'Loss in Semifinals',    result:'4–11',     opp:'Pirates',                    champ:false },
-  { season:'Spring 2023', w:6, l:2, t:0, rs:85,  ra:23,  seed:2, teams:5,  outcome:'Loss in Championship',  result:'1–8',      opp:'Cafe Tropical',              champ:false },
-  { season:'Summer 2023', w:7, l:1, t:0, rs:69,  ra:34,  seed:1, teams:5,  outcome:'Loss in Championship',  result:'1–5',      opp:'Pirates',                    champ:false },
-  { season:'Fall 2023',   w:9, l:0, t:0, rs:99,  ra:29,  seed:1, teams:8,  outcome:'WIN Championship',      result:'3–2',      opp:'Pirates',                    champ:true  },
-  { season:'Spring 2024', w:5, l:2, t:0, rs:40,  ra:12,  seed:2, teams:4,  outcome:'WIN Championship',      result:'4–0',      opp:"Kick Us While We're Down",   champ:true  },
-  { season:'Summer 2024', w:8, l:0, t:0, rs:79,  ra:17,  seed:1, teams:7,  outcome:'WIN Championship',      result:'4–2',      opp:'Average & Savage',           champ:true  },
-  { season:'Fall 2024',   w:5, l:3, t:0, rs:69,  ra:26,  seed:3, teams:6,  outcome:'Loss in Championship',  result:'2–5',      opp:'Average & Savage',           champ:false },
-  { season:'Spring 2025', w:5, l:1, t:1, rs:34,  ra:13,  seed:1, teams:6,  outcome:'Loss in Semifinals',    result:'2–5',      opp:'Just the Tipsy',             champ:false },
-  { season:'Summer 2025', w:6, l:1, t:0, rs:36,  ra:12,  seed:1, teams:5,  outcome:'WIN Championship',      result:'1–0',      opp:'Average & Savage',           champ:true  },
-  { season:'Fall 2025',   w:3, l:3, t:2, rs:31,  ra:30,  seed:4, teams:5,  outcome:'Loss in Semifinals',    result:'0–2',      opp:'Team Gnar Gnar',             champ:false },
-  { season:'Spring 2026', w:5, l:4, t:0, rs:40,  ra:33,  seed:3, teams:6,  outcome:'Loss in Championship',  result:'4–8',      opp:'Just the Tipsy',             champ:false },
-  { season:'Summer 2026', w:7, l:0, t:0, rs:46,  ra:13,  seed:1, teams:6,  outcome:'WIN Championship',      result:'4–3 (11th inning)',  opp:'Just the Tipsy',  champ:true  },
+  { season:"Summer 2021", w:2, l:5, t:0, rs:29,  ra:33,  seed:7, teams:9,  outcome:"Loss in Quarterfinal",  result:"6–9",      opp:"Hold My Beer",               champ:false  },
+  { season:"Fall 2021", w:5, l:1, t:1, rs:50,  ra:26,  seed:2, teams:12,  outcome:"Loss in Championship",  result:"9–10",      opp:"The Middle",               champ:false  },
+  { season:"Spring 2022", w:4, l:3, t:1, rs:47,  ra:55,  seed:2, teams:4,  outcome:"Loss in Championship",  result:"0–5",      opp:"Globo Gym",               champ:false  },
+  { season:"Summer 2022", w:7, l:1, t:0, rs:64,  ra:23,  seed:2, teams:6,  outcome:"WIN Championship",  result:"2–1",      opp:"Kick Us While We're Down",               champ:true  },
+  { season:"Fall 2022", w:5, l:2, t:0, rs:64,  ra:30,  seed:2, teams:7,  outcome:"Loss in Semifinals",  result:"4–11",      opp:"Pirates",               champ:false  },
+  { season:"Spring 2023", w:6, l:2, t:0, rs:85,  ra:23,  seed:2, teams:5,  outcome:"Loss in Championship",  result:"1–8",      opp:"Cafe Tropical",               champ:false  },
+  { season:"Summer 2023", w:7, l:1, t:0, rs:69,  ra:34,  seed:1, teams:5,  outcome:"Loss in Championship",  result:"1–5",      opp:"Pirates",               champ:false  },
+  { season:"Fall 2023", w:9, l:0, t:0, rs:99,  ra:29,  seed:1, teams:8,  outcome:"WIN Championship",  result:"3–2",      opp:"Pirates",               champ:true  },
+  { season:"Spring 2024", w:5, l:2, t:0, rs:40,  ra:12,  seed:2, teams:4,  outcome:"WIN Championship",  result:"4–0",      opp:"Kick Us While We're Down",               champ:true  },
+  { season:"Summer 2024", w:8, l:0, t:0, rs:79,  ra:17,  seed:1, teams:7,  outcome:"WIN Championship",  result:"4–2",      opp:"Average & Savage",               champ:true  },
+  { season:"Fall 2024", w:5, l:3, t:0, rs:69,  ra:26,  seed:3, teams:6,  outcome:"Loss in Championship",  result:"2–5",      opp:"Average & Savage",               champ:false  },
+  { season:"Spring 2025", w:5, l:1, t:1, rs:34,  ra:13,  seed:1, teams:6,  outcome:"Loss in Semifinals",  result:"2–5",      opp:"Just the Tipsy",               champ:false  },
+  { season:"Summer 2025", w:6, l:1, t:0, rs:36,  ra:12,  seed:1, teams:5,  outcome:"WIN Championship",  result:"1–0",      opp:"Average & Savage",               champ:true  },
+  { season:"Fall 2025", w:3, l:3, t:2, rs:31,  ra:30,  seed:4, teams:5,  outcome:"Loss in Semifinals",  result:"0–2",      opp:"Team Gnar Gnar",               champ:false  },
+  { season:"Spring 2026", w:5, l:4, t:0, rs:40,  ra:33,  seed:3, teams:6,  outcome:"Loss in Championship",  result:"4–8",      opp:"Just the Tipsy",               champ:false  },
+  { season:"Summer 2026", w:7, l:0, t:0, rs:46,  ra:13,  seed:1, teams:6,  outcome:"WIN Championship",  result:"4–3 (11th inning)",      opp:"Just the Tipsy",               champ:true  },
+  { season:"Fall 2026", w:1, l:0, t:0, rs:3,  ra:1,  seed:0, teams:0,  outcome:"Season in Progress",  result:"—",      opp:"TBD",               champ:false  }
 ];
 
 const GAMES = [
-  {season:'Summer 2021',date:'2021-06-15',opp:'Safer at Home (Plate)',outcome:'Loss',score:'1 – 10',rs:1,ra:10,margin:-9},
-  {season:'Summer 2021',date:'2021-06-22',opp:'Scissor Me Timbers',outcome:'Loss',score:'1 – 2',rs:1,ra:2,margin:-1},
-  {season:'Summer 2021',date:'2021-06-22',opp:'Vegas Gold',outcome:'Win',score:'9 – 1',rs:9,ra:1,margin:8},
-  {season:'Summer 2021',date:'2021-07-06',opp:'Hold My Beer',outcome:'Loss',score:'4 – 10',rs:4,ra:10,margin:-6},
-  {season:'Summer 2021',date:'2021-07-13',opp:'Spring Chickens',outcome:'Win',score:'8 – 1',rs:8,ra:1,margin:7},
-  {season:'Summer 2021',date:'2021-07-20',opp:'The Starlets',outcome:'Loss',score:'Forfeit',rs:0,ra:0,margin:0},
-  {season:'Summer 2021',date:'2021-07-27',opp:'Hold My Beer',outcome:'Loss',score:'6 – 9',rs:6,ra:9,margin:-3},
-  {season:'Fall 2021',date:'2021-09-09',opp:'Cornjerkers',outcome:'Win',score:'8 – 0',rs:8,ra:0,margin:8},
-  {season:'Fall 2021',date:'2021-09-16',opp:'Fo Life',outcome:'Tie',score:'9 – 9',rs:9,ra:9,margin:0},
-  {season:'Fall 2021',date:'2021-09-23',opp:'Kicking and Screaming',outcome:'Win',score:'3 – 2',rs:3,ra:2,margin:1},
-  {season:'Fall 2021',date:'2021-09-30',opp:'Old Balls',outcome:'Win',score:'9 – 1',rs:9,ra:1,margin:8},
-  {season:'Fall 2021',date:'2021-10-14',opp:'The Kicklers',outcome:'Win',score:'8 – 1',rs:8,ra:1,margin:7},
-  {season:'Fall 2021',date:'2021-10-21',opp:'Fo Life',outcome:'Win',score:'4 – 3',rs:4,ra:3,margin:1},
-  {season:'Fall 2021',date:'2021-10-21',opp:'The Middle',outcome:'Loss',score:'9 – 10',rs:9,ra:10,margin:-1},
-  {season:'Spring 2022',date:'2022-04-27',opp:'Trojans',outcome:'Tie',score:'3 – 3',rs:3,ra:3,margin:0},
-  {season:'Spring 2022',date:'2022-05-04',opp:'MC Ballers',outcome:'Win',score:'7 – 6',rs:7,ra:6,margin:1},
-  {season:'Spring 2022',date:'2022-05-11',opp:'Trojans',outcome:'Win',score:'8 – 5',rs:8,ra:5,margin:3},
-  {season:'Spring 2022',date:'2022-05-18',opp:'MC Ballers',outcome:'Win',score:'7 – 6',rs:7,ra:6,margin:1},
-  {season:'Spring 2022',date:'2022-06-01',opp:'Red Ball and Vodka (Globo Gym)',outcome:'Loss',score:'1 – 16',rs:1,ra:16,margin:-15},
-  {season:'Spring 2022',date:'2022-06-22',opp:'Red Ball and Vodka (Globo Gym)',outcome:'Loss',score:'7 – 8',rs:7,ra:8,margin:-1},
-  {season:'Spring 2022',date:'2022-06-29',opp:'Trojans',outcome:'Win',score:'14 – 6',rs:14,ra:6,margin:8},
-  {season:'Spring 2022',date:'2022-07-06',opp:'Red Ball and Vodka (Globo Gym)',outcome:'Loss',score:'0 – 5',rs:0,ra:5,margin:-5},
-  {season:'Summer 2022',date:'2022-07-13',opp:'MC Ballers',outcome:'Win',score:'6 – 1',rs:6,ra:1,margin:5},
-  {season:'Summer 2022',date:'2022-07-20',opp:"Kick Us While We're Down",outcome:'Win',score:'11 – 6',rs:11,ra:6,margin:5},
-  {season:'Summer 2022',date:'2022-07-27',opp:'Not Your Average Joes',outcome:'Win',score:'6 – 3',rs:6,ra:3,margin:3},
-  {season:'Summer 2022',date:'2022-08-10',opp:'Trojans',outcome:'Win',score:'18 – 3',rs:18,ra:3,margin:15},
-  {season:'Summer 2022',date:'2022-08-17',opp:'Red Ball and Vodka (Globo Gym)',outcome:'Loss',score:'2 – 6',rs:2,ra:6,margin:-4},
-  {season:'Summer 2022',date:'2022-08-24',opp:'Trojans',outcome:'Win',score:'17 – 2',rs:17,ra:2,margin:15},
-  {season:'Summer 2022',date:'2022-09-07',opp:'Not Your Average Joes',outcome:'Win',score:'2 – 1',rs:2,ra:1,margin:1},
-  {season:'Summer 2022',date:'2022-09-07',opp:"Kick Us While We're Down",outcome:'Win',score:'2 – 1',rs:2,ra:1,margin:1},
-  {season:'Fall 2022',date:'2022-09-14',opp:'Red Ball and Vodka (Globo Gym)',outcome:'Loss',score:'4 – 11',rs:4,ra:11,margin:-7},
-  {season:'Fall 2022',date:'2022-09-21',opp:'Suck Our Kicks (Pirates)',outcome:'Win',score:'10 – 3',rs:10,ra:3,margin:7},
-  {season:'Fall 2022',date:'2022-09-21',opp:'Team Gnar Gnar',outcome:'Win',score:'15 – 0',rs:15,ra:0,margin:15},
-  {season:'Fall 2022',date:'2022-09-28',opp:'MC Ballers',outcome:'Win',score:'5 – 4',rs:5,ra:4,margin:1},
-  {season:'Fall 2022',date:'2022-10-05',opp:'Alive and Kicking',outcome:'Win',score:'11 – 0',rs:11,ra:0,margin:11},
-  {season:'Fall 2022',date:'2022-10-19',opp:'Booze on First',outcome:'Win',score:'15 – 1',rs:15,ra:1,margin:14},
-  {season:'Fall 2022',date:'2022-10-26',opp:'Suck Our Kicks (Pirates)',outcome:'Loss',score:'4 – 11',rs:4,ra:11,margin:-7},
-  {season:'Spring 2023',date:'2023-04-26',opp:"Kick Us While We're Down",outcome:'Win',score:'11 – 2',rs:11,ra:2,margin:9},
-  {season:'Spring 2023',date:'2023-05-03',opp:'Cafe Tropical',outcome:'Loss',score:'2 – 3',rs:2,ra:3,margin:-1},
-  {season:'Spring 2023',date:'2023-05-10',opp:'MC Ballers',outcome:'Win',score:'18 – 4',rs:18,ra:4,margin:14},
-  {season:'Spring 2023',date:'2023-05-17',opp:'Quack Daddies & Lady Penguins',outcome:'Win',score:'14 – 0',rs:14,ra:0,margin:14},
-  {season:'Spring 2023',date:'2023-05-24',opp:'MC Ballers',outcome:'Win',score:'4 – 0',rs:4,ra:0,margin:4},
-  {season:'Spring 2023',date:'2023-05-31',opp:'Cut a Pitch',outcome:'Win',score:'17 – 5',rs:17,ra:5,margin:12},
-  {season:'Spring 2023',date:'2023-06-14',opp:'Cut a Pitch',outcome:'Win',score:'18 – 1',rs:18,ra:1,margin:17},
-  {season:'Spring 2023',date:'2023-06-14',opp:'Cafe Tropical',outcome:'Loss',score:'1 – 8',rs:1,ra:8,margin:-7},
-  {season:'Summer 2023',date:'2023-06-21',opp:"Kick Us While We're Down",outcome:'Win',score:'5 – 2',rs:5,ra:2,margin:3},
-  {season:'Summer 2023',date:'2023-07-19',opp:'Kicks Out for Harambe',outcome:'Win',score:'16 – 6',rs:16,ra:6,margin:10},
-  {season:'Summer 2023',date:'2023-08-02',opp:'Picked Last',outcome:'Win',score:'9 – 3',rs:9,ra:3,margin:6},
-  {season:'Summer 2023',date:'2023-08-09',opp:'Kick Cheney and the Shotguns (Pirates)',outcome:'Win',score:'13 – 7',rs:13,ra:7,margin:6},
-  {season:'Summer 2023',date:'2023-08-09',opp:'Picked Last',outcome:'Win',score:'9 – 5',rs:9,ra:5,margin:4},
-  {season:'Summer 2023',date:'2023-08-23',opp:'Kick Cheney and the Shotguns (Pirates)',outcome:'Win',score:'9 – 5',rs:9,ra:5,margin:4},
-  {season:'Summer 2023',date:'2023-08-30',opp:'Kicks Out for Harambe',outcome:'Win',score:'7 – 1',rs:7,ra:1,margin:6},
-  {season:'Summer 2023',date:'2023-08-30',opp:'Kick Cheney and the Shotguns (Pirates)',outcome:'Loss',score:'1 – 5',rs:1,ra:5,margin:-4},
-  {season:'Fall 2023',date:'2023-09-06',opp:'Trojans',outcome:'Win',score:'22 – 2',rs:22,ra:2,margin:20},
-  {season:'Fall 2023',date:'2023-09-06',opp:'Just the Tipsy',outcome:'Win',score:'10 – 5',rs:10,ra:5,margin:5},
-  {season:'Fall 2023',date:'2023-09-13',opp:"Kick Us While We're Down",outcome:'Win',score:'7 – 5',rs:7,ra:5,margin:2},
-  {season:'Fall 2023',date:'2023-09-20',opp:'MC Ballers',outcome:'Win',score:'15 – 2',rs:15,ra:2,margin:13},
-  {season:'Fall 2023',date:'2023-09-27',opp:'The Sharks',outcome:'Win',score:'10 – 4',rs:10,ra:4,margin:6},
-  {season:'Fall 2023',date:'2023-10-04',opp:'Kick Cheney and the Shotguns (Pirates)',outcome:'Win',score:'10 – 4',rs:10,ra:4,margin:6},
-  {season:'Fall 2023',date:'2023-10-11',opp:'Trojans',outcome:'Win',score:'13 – 2',rs:13,ra:2,margin:11},
-  {season:'Fall 2023',date:'2023-10-18',opp:"Kick Us While We're Down",outcome:'Win',score:'9 – 3',rs:9,ra:3,margin:6},
-  {season:'Fall 2023',date:'2023-10-18',opp:'Kick Cheney and the Shotguns (Pirates)',outcome:'Win',score:'3 – 2',rs:3,ra:2,margin:1},
-  {season:'Spring 2024',date:'2024-04-24',opp:'MC Ballers',outcome:'Win',score:'7 – 0',rs:7,ra:0,margin:7},
-  {season:'Spring 2024',date:'2024-05-01',opp:"Kick Us While We're Down",outcome:'Loss',score:'2 – 3',rs:2,ra:3,margin:-1},
-  {season:'Spring 2024',date:'2024-05-08',opp:"Kick Us While We're Down",outcome:'Loss',score:'4 – 5',rs:4,ra:5,margin:-1},
-  {season:'Spring 2024',date:'2024-05-15',opp:'MC Ballers',outcome:'Win',score:'18 – 1',rs:18,ra:1,margin:17},
-  {season:'Spring 2024',date:'2024-05-22',opp:'Highly Educated, Poorly Executed',outcome:'Win',score:'1 – 0',rs:1,ra:0,margin:1},
-  {season:'Spring 2024',date:'2024-06-26',opp:'MC Ballers',outcome:'Win',score:'4 – 3',rs:4,ra:3,margin:1},
-  {season:'Spring 2024',date:'2024-07-03',opp:"Kick Us While We're Down",outcome:'Win',score:'4 – 0',rs:4,ra:0,margin:4},
-  {season:'Summer 2024',date:'2024-07-10',opp:"Kick Us While We're Down",outcome:'Win',score:'7 – 0',rs:7,ra:0,margin:7},
-  {season:'Summer 2024',date:'2024-07-17',opp:'Pulse Pounders',outcome:'Win',score:'9 – 1',rs:9,ra:1,margin:8},
-  {season:'Summer 2024',date:'2024-07-24',opp:'PIMPS',outcome:'Win',score:'18 – 1',rs:18,ra:1,margin:17},
-  {season:'Summer 2024',date:'2024-07-31',opp:'Kickers with a Drinking Problem!',outcome:'Win',score:'12 – 3',rs:12,ra:3,margin:9},
-  {season:'Summer 2024',date:'2024-07-31',opp:'Average and Savage',outcome:'Win',score:'11 – 4',rs:11,ra:4,margin:7},
-  {season:'Summer 2024',date:'2024-08-07',opp:'The Sharks',outcome:'Win',score:'13 – 2',rs:13,ra:2,margin:11},
-  {season:'Summer 2024',date:'2024-08-28',opp:'The Sharks',outcome:'Win',score:'5 – 4',rs:5,ra:4,margin:1},
-  {season:'Summer 2024',date:'2024-08-28',opp:'Average and Savage',outcome:'Win',score:'4 – 2',rs:4,ra:2,margin:2},
-  {season:'Fall 2024',date:'2024-09-04',opp:'The Sharks',outcome:'Win',score:'23 – 2',rs:23,ra:2,margin:21},
-  {season:'Fall 2024',date:'2024-09-04',opp:'Bar flies',outcome:'Win',score:'21 – 1',rs:21,ra:1,margin:20},
-  {season:'Fall 2024',date:'2024-09-11',opp:'Team Gnar Gnar',outcome:'Win',score:'10 – 0',rs:10,ra:0,margin:10},
-  {season:'Fall 2024',date:'2024-09-25',opp:'Average and Savage',outcome:'Loss',score:'0 – 7',rs:0,ra:7,margin:-7},
-  {season:'Fall 2024',date:'2024-10-02',opp:'Just the Tipsy',outcome:'Loss',score:'2 – 3',rs:2,ra:3,margin:-1},
-  {season:'Fall 2024',date:'2024-10-09',opp:'Average and Savage',outcome:'Win',score:'4 – 3',rs:4,ra:3,margin:1},
-  {season:'Fall 2024',date:'2024-10-16',opp:'Just the Tipsy',outcome:'Win',score:'7 – 5',rs:7,ra:5,margin:2},
-  {season:'Fall 2024',date:'2024-10-16',opp:'Average and Savage',outcome:'Loss',score:'2 – 5',rs:2,ra:5,margin:-3},
-  {season:'Spring 2025',date:'2025-04-16',opp:'Average and Savage',outcome:'Win',score:'4 – 1',rs:4,ra:1,margin:3},
-  {season:'Spring 2025',date:'2025-04-23',opp:'KickTok Stars',outcome:'Win',score:'14 – 3',rs:14,ra:3,margin:11},
-  {season:'Spring 2025',date:'2025-04-30',opp:"Kick Us While We're Down",outcome:'Win',score:'6 – 1',rs:6,ra:1,margin:5},
-  {season:'Spring 2025',date:'2025-05-07',opp:'Just the Tipsy',outcome:'Tie',score:'1 – 1',rs:1,ra:1,margin:0},
-  {season:'Spring 2025',date:'2025-05-14',opp:'Kick Me Baby One More Time',outcome:'Win',score:'4 – 0',rs:4,ra:0,margin:4},
-  {season:'Spring 2025',date:'2025-05-28',opp:"Kick Us While We're Down",outcome:'Win',score:'3 – 2',rs:3,ra:2,margin:1},
-  {season:'Spring 2025',date:'2025-06-04',opp:'Just the Tipsy',outcome:'Loss',score:'2 – 5',rs:2,ra:5,margin:-3},
-  {season:'Summer 2025',date:'2025-06-25',opp:'On Wednesdays We Wear Pink',outcome:'Win',score:'3 – 1',rs:3,ra:1,margin:2},
-  {season:'Summer 2025',date:'2025-07-02',opp:'Kickin bass!',outcome:'Win',score:'13 – 0',rs:13,ra:0,margin:13},
-  {season:'Summer 2025',date:'2025-07-09',opp:'Just the Tipsy',outcome:'Win',score:'4 – 1',rs:4,ra:1,margin:3},
-  {season:'Summer 2025',date:'2025-08-06',opp:'Just the Tipsy',outcome:'Loss',score:'3 – 6',rs:3,ra:6,margin:-3},
-  {season:'Summer 2025',date:'2025-08-06',opp:'Average and Savage',outcome:'Win',score:'5 – 4',rs:5,ra:4,margin:1},
-  {season:'Summer 2025',date:'2025-08-13',opp:'On Wednesdays We Wear Pink',outcome:'Win',score:'7 – 0',rs:7,ra:0,margin:7},
-  {season:'Summer 2025',date:'2025-08-20',opp:'Average and Savage',outcome:'Win',score:'1 – 0',rs:1,ra:0,margin:1},
-  {season:'Fall 2025',date:'2025-08-27',opp:'Fo Life',outcome:'Tie',score:'10 – 10',rs:10,ra:10,margin:0},
-  {season:'Fall 2025',date:'2025-09-03',opp:'Just the Tipsy',outcome:'Win',score:'2 – 1',rs:2,ra:1,margin:1},
-  {season:'Fall 2025',date:'2025-09-10',opp:'Team Gnar Gnar',outcome:'Loss',score:'2 – 5',rs:2,ra:5,margin:-3},
-  {season:'Fall 2025',date:'2025-09-17',opp:'Average and Savage',outcome:'Win',score:'7 – 4',rs:7,ra:4,margin:3},
-  {season:'Fall 2025',date:'2025-09-24',opp:'Average and Savage',outcome:'Tie',score:'4 – 4',rs:4,ra:4,margin:0},
-  {season:'Fall 2025',date:'2025-10-01',opp:'Team Gnar Gnar',outcome:'Loss',score:'2 – 4',rs:2,ra:4,margin:-2},
-  {season:'Fall 2025',date:'2025-10-08',opp:'Fo Life',outcome:'Win',score:'4 – 0',rs:4,ra:0,margin:4},
-  {season:'Fall 2025',date:'2025-10-08',opp:'Team Gnar Gnar',outcome:'Loss',score:'0 – 2',rs:0,ra:2,margin:-2},
-  {season:'Spring 2026',date:'2026-04-08',opp:'Fo Life',outcome:'Win',score:'7 – 4',rs:7,ra:4,margin:3},
-  {season:'Spring 2026',date:'2026-04-22',opp:'Average and Savage',outcome:'Loss',score:'4 – 6',rs:4,ra:6,margin:-2},
-  {season:'Spring 2026',date:'2026-04-29',opp:'Fresh Kick of Ball Air',outcome:'Loss',score:'1 – 2',rs:1,ra:2,margin:-1},
-  {season:'Spring 2026',date:'2026-05-06',opp:'Just the Tipsy',outcome:'Loss',score:'1 – 2',rs:1,ra:2,margin:-1},
-  {season:'Spring 2026',date:'2026-05-13',opp:'Average and Savage',outcome:'Win',score:'4 – 2',rs:4,ra:2,margin:2},
-  {season:'Spring 2026',date:'2026-05-20',opp:"Kick Us While We're Down",outcome:'Win',score:'4 – 3',rs:4,ra:3,margin:1},
-  {season:'Spring 2026',date:'2026-05-27',opp:"Kick Us While We're Down",outcome:'Win',score:'4 – 3',rs:4,ra:3,margin:1},
-  {season:'Spring 2026',date:'2026-06-03',opp:'Fresh Kick of Ball Air',outcome:'Win',score:'11 – 3',rs:11,ra:3,margin:8},
-  {season:'Spring 2026',date:'2026-06-03',opp:'Just the Tipsy',outcome:'Loss',score:'4 – 8',rs:4,ra:8,margin:-4},
-  {season:'Summer 2026',date:'2026-07-01',opp:'Hot Cuts!',outcome:'Win',score:'7 – 3',rs:7,ra:3,margin:4},
-  {season:'Summer 2026',date:'2026-07-08',opp:'Average and Savage',outcome:'Win',score:'5 – 2',rs:5,ra:2,margin:3},
-  {season:'Summer 2026',date:'2026-07-15',opp:'Average and Savage',outcome:'Win',score:'8 – 3',rs:8,ra:3,margin:5},
-  {season:'Summer 2026',date:'2026-07-22',opp:"Kick Us While We're Down",outcome:'Win',score:'8 – 0',rs:8,ra:0,margin:8},
-  {season:'Summer 2026',date:'2026-07-29',opp:'Fo Life',outcome:'Win',score:'6 – 2',rs:6,ra:2,margin:4},
-  {season:'Summer 2026',date:'2026-08-05',opp:'Hot Cuts!',outcome:'Win',score:'8 – 0',rs:8,ra:0,margin:8},
-  {season:'Summer 2026',date:'2026-08-12',opp:'Just the Tipsy',outcome:'Win',score:'4 – 3',rs:4,ra:3,margin:1},
+  {season:"Summer 2021",date:"2021-06-15",opp:"Safer at Home (Plate)",outcome:"Loss",score:"1 – 10",rs:1,ra:10,margin:-9},
+  {season:"Summer 2021",date:"2021-06-22",opp:"Scissor Me Timbers",outcome:"Loss",score:"1 – 2",rs:1,ra:2,margin:-1},
+  {season:"Summer 2021",date:"2021-06-22",opp:"Vegas Gold",outcome:"Win",score:"9 – 1",rs:9,ra:1,margin:8},
+  {season:"Summer 2021",date:"2021-07-06",opp:"Hold My Beer",outcome:"Loss",score:"4 – 10",rs:4,ra:10,margin:-6},
+  {season:"Summer 2021",date:"2021-07-13",opp:"Spring Chickens",outcome:"Win",score:"8 – 1",rs:8,ra:1,margin:7},
+  {season:"Summer 2021",date:"2021-07-20",opp:"The Starlets",outcome:"Loss",score:"Forfeit",rs:0,ra:0,margin:0},
+  {season:"Summer 2021",date:"2021-07-27",opp:"Hold My Beer",outcome:"Loss",score:"6 – 9",rs:6,ra:9,margin:-3},
+  {season:"Fall 2021",date:"2021-09-09",opp:"Cornjerkers",outcome:"Win",score:"8 – 0",rs:8,ra:0,margin:8},
+  {season:"Fall 2021",date:"2021-09-16",opp:"Fo Life",outcome:"Tie",score:"9 – 9",rs:9,ra:9,margin:0},
+  {season:"Fall 2021",date:"2021-09-23",opp:"Kicking and Screaming",outcome:"Win",score:"3 – 2",rs:3,ra:2,margin:1},
+  {season:"Fall 2021",date:"2021-09-30",opp:"Old Balls",outcome:"Win",score:"9 – 1",rs:9,ra:1,margin:8},
+  {season:"Fall 2021",date:"2021-10-14",opp:"The Kicklers",outcome:"Win",score:"8 – 1",rs:8,ra:1,margin:7},
+  {season:"Fall 2021",date:"2021-10-21",opp:"Fo Life",outcome:"Win",score:"4 – 3",rs:4,ra:3,margin:1},
+  {season:"Fall 2021",date:"2021-10-21",opp:"The Middle",outcome:"Loss",score:"9 – 10",rs:9,ra:10,margin:-1},
+  {season:"Spring 2022",date:"2022-04-27",opp:"Trojans",outcome:"Tie",score:"3 – 3",rs:3,ra:3,margin:0},
+  {season:"Spring 2022",date:"2022-05-04",opp:"MC Ballers",outcome:"Win",score:"7 – 6",rs:7,ra:6,margin:1},
+  {season:"Spring 2022",date:"2022-05-11",opp:"Trojans",outcome:"Win",score:"8 – 5",rs:8,ra:5,margin:3},
+  {season:"Spring 2022",date:"2022-05-18",opp:"MC Ballers",outcome:"Win",score:"7 – 6",rs:7,ra:6,margin:1},
+  {season:"Spring 2022",date:"2022-06-01",opp:"Red Ball and Vodka (Globo Gym)",outcome:"Loss",score:"1 – 16",rs:1,ra:16,margin:-15},
+  {season:"Spring 2022",date:"2022-06-22",opp:"Red Ball and Vodka (Globo Gym)",outcome:"Loss",score:"7 – 8",rs:7,ra:8,margin:-1},
+  {season:"Spring 2022",date:"2022-06-29",opp:"Trojans",outcome:"Win",score:"14 – 6",rs:14,ra:6,margin:8},
+  {season:"Spring 2022",date:"2022-07-06",opp:"Red Ball and Vodka (Globo Gym)",outcome:"Loss",score:"0 – 5",rs:0,ra:5,margin:-5},
+  {season:"Summer 2022",date:"2022-07-13",opp:"MC Ballers",outcome:"Win",score:"6 – 1",rs:6,ra:1,margin:5},
+  {season:"Summer 2022",date:"2022-07-20",opp:"Kick Us While We're Down",outcome:"Win",score:"11 – 6",rs:11,ra:6,margin:5},
+  {season:"Summer 2022",date:"2022-07-27",opp:"Not Your Average Joes",outcome:"Win",score:"6 – 3",rs:6,ra:3,margin:3},
+  {season:"Summer 2022",date:"2022-08-10",opp:"Trojans",outcome:"Win",score:"18 – 3",rs:18,ra:3,margin:15},
+  {season:"Summer 2022",date:"2022-08-17",opp:"Red Ball and Vodka (Globo Gym)",outcome:"Loss",score:"2 – 6",rs:2,ra:6,margin:-4},
+  {season:"Summer 2022",date:"2022-08-24",opp:"Trojans",outcome:"Win",score:"17 – 2",rs:17,ra:2,margin:15},
+  {season:"Summer 2022",date:"2022-09-07",opp:"Not Your Average Joes",outcome:"Win",score:"2 – 1",rs:2,ra:1,margin:1},
+  {season:"Summer 2022",date:"2022-09-07",opp:"Kick Us While We're Down",outcome:"Win",score:"2 – 1",rs:2,ra:1,margin:1},
+  {season:"Fall 2022",date:"2022-09-14",opp:"Red Ball and Vodka (Globo Gym)",outcome:"Loss",score:"4 – 11",rs:4,ra:11,margin:-7},
+  {season:"Fall 2022",date:"2022-09-21",opp:"Suck Our Kicks (Pirates)",outcome:"Win",score:"10 – 3",rs:10,ra:3,margin:7},
+  {season:"Fall 2022",date:"2022-09-21",opp:"Team Gnar Gnar",outcome:"Win",score:"15 – 0",rs:15,ra:0,margin:15},
+  {season:"Fall 2022",date:"2022-09-28",opp:"MC Ballers",outcome:"Win",score:"5 – 4",rs:5,ra:4,margin:1},
+  {season:"Fall 2022",date:"2022-10-05",opp:"Alive and Kicking",outcome:"Win",score:"11 – 0",rs:11,ra:0,margin:11},
+  {season:"Fall 2022",date:"2022-10-19",opp:"Booze on First",outcome:"Win",score:"15 – 1",rs:15,ra:1,margin:14},
+  {season:"Fall 2022",date:"2022-10-26",opp:"Suck Our Kicks (Pirates)",outcome:"Loss",score:"4 – 11",rs:4,ra:11,margin:-7},
+  {season:"Spring 2023",date:"2023-04-26",opp:"Kick Us While We're Down",outcome:"Win",score:"11 – 2",rs:11,ra:2,margin:9},
+  {season:"Spring 2023",date:"2023-05-03",opp:"Cafe Tropical",outcome:"Loss",score:"2 – 3",rs:2,ra:3,margin:-1},
+  {season:"Spring 2023",date:"2023-05-10",opp:"MC Ballers",outcome:"Win",score:"18 – 4",rs:18,ra:4,margin:14},
+  {season:"Spring 2023",date:"2023-05-17",opp:"Quack Daddies & Lady Penguins",outcome:"Win",score:"14 – 0",rs:14,ra:0,margin:14},
+  {season:"Spring 2023",date:"2023-05-24",opp:"MC Ballers",outcome:"Win",score:"4 – 0",rs:4,ra:0,margin:4},
+  {season:"Spring 2023",date:"2023-05-31",opp:"Cut a Pitch",outcome:"Win",score:"17 – 5",rs:17,ra:5,margin:12},
+  {season:"Spring 2023",date:"2023-06-14",opp:"Cut a Pitch",outcome:"Win",score:"18 – 1",rs:18,ra:1,margin:17},
+  {season:"Spring 2023",date:"2023-06-14",opp:"Cafe Tropical",outcome:"Loss",score:"1 – 8",rs:1,ra:8,margin:-7},
+  {season:"Summer 2023",date:"2023-06-21",opp:"Kick Us While We're Down",outcome:"Win",score:"5 – 2",rs:5,ra:2,margin:3},
+  {season:"Summer 2023",date:"2023-07-19",opp:"Kicks Out for Harambe",outcome:"Win",score:"16 – 6",rs:16,ra:6,margin:10},
+  {season:"Summer 2023",date:"2023-08-02",opp:"Picked Last",outcome:"Win",score:"9 – 3",rs:9,ra:3,margin:6},
+  {season:"Summer 2023",date:"2023-08-09",opp:"Kick Cheney and the Shotguns (Pirates)",outcome:"Win",score:"13 – 7",rs:13,ra:7,margin:6},
+  {season:"Summer 2023",date:"2023-08-09",opp:"Picked Last",outcome:"Win",score:"9 – 5",rs:9,ra:5,margin:4},
+  {season:"Summer 2023",date:"2023-08-23",opp:"Kick Cheney and the Shotguns (Pirates)",outcome:"Win",score:"9 – 5",rs:9,ra:5,margin:4},
+  {season:"Summer 2023",date:"2023-08-30",opp:"Kicks Out for Harambe",outcome:"Win",score:"7 – 1",rs:7,ra:1,margin:6},
+  {season:"Summer 2023",date:"2023-08-30",opp:"Kick Cheney and the Shotguns (Pirates)",outcome:"Loss",score:"1 – 5",rs:1,ra:5,margin:-4},
+  {season:"Fall 2023",date:"2023-09-06",opp:"Trojans",outcome:"Win",score:"22 – 2",rs:22,ra:2,margin:20},
+  {season:"Fall 2023",date:"2023-09-06",opp:"Just the Tipsy",outcome:"Win",score:"10 – 5",rs:10,ra:5,margin:5},
+  {season:"Fall 2023",date:"2023-09-13",opp:"Kick Us While We're Down",outcome:"Win",score:"7 – 5",rs:7,ra:5,margin:2},
+  {season:"Fall 2023",date:"2023-09-20",opp:"MC Ballers",outcome:"Win",score:"15 – 2",rs:15,ra:2,margin:13},
+  {season:"Fall 2023",date:"2023-09-27",opp:"The Sharks",outcome:"Win",score:"10 – 4",rs:10,ra:4,margin:6},
+  {season:"Fall 2023",date:"2023-10-04",opp:"Kick Cheney and the Shotguns (Pirates)",outcome:"Win",score:"10 – 4",rs:10,ra:4,margin:6},
+  {season:"Fall 2023",date:"2023-10-11",opp:"Trojans",outcome:"Win",score:"13 – 2",rs:13,ra:2,margin:11},
+  {season:"Fall 2023",date:"2023-10-18",opp:"Kick Us While We're Down",outcome:"Win",score:"9 – 3",rs:9,ra:3,margin:6},
+  {season:"Fall 2023",date:"2023-10-18",opp:"Kick Cheney and the Shotguns (Pirates)",outcome:"Win",score:"3 – 2",rs:3,ra:2,margin:1},
+  {season:"Spring 2024",date:"2024-04-24",opp:"MC Ballers",outcome:"Win",score:"7 – 0",rs:7,ra:0,margin:7},
+  {season:"Spring 2024",date:"2024-05-01",opp:"Kick Us While We're Down",outcome:"Loss",score:"2 – 3",rs:2,ra:3,margin:-1},
+  {season:"Spring 2024",date:"2024-05-08",opp:"Kick Us While We're Down",outcome:"Loss",score:"4 – 5",rs:4,ra:5,margin:-1},
+  {season:"Spring 2024",date:"2024-05-15",opp:"MC Ballers",outcome:"Win",score:"18 – 1",rs:18,ra:1,margin:17},
+  {season:"Spring 2024",date:"2024-05-22",opp:"Highly Educated, Poorly Executed",outcome:"Win",score:"1 – 0",rs:1,ra:0,margin:1},
+  {season:"Spring 2024",date:"2024-06-26",opp:"MC Ballers",outcome:"Win",score:"4 – 3",rs:4,ra:3,margin:1},
+  {season:"Spring 2024",date:"2024-07-03",opp:"Kick Us While We're Down",outcome:"Win",score:"4 – 0",rs:4,ra:0,margin:4},
+  {season:"Summer 2024",date:"2024-07-10",opp:"Kick Us While We're Down",outcome:"Win",score:"7 – 0",rs:7,ra:0,margin:7},
+  {season:"Summer 2024",date:"2024-07-17",opp:"Pulse Pounders",outcome:"Win",score:"9 – 1",rs:9,ra:1,margin:8},
+  {season:"Summer 2024",date:"2024-07-24",opp:"PIMPS",outcome:"Win",score:"18 – 1",rs:18,ra:1,margin:17},
+  {season:"Summer 2024",date:"2024-07-31",opp:"Kickers with a Drinking Problem!",outcome:"Win",score:"12 – 3",rs:12,ra:3,margin:9},
+  {season:"Summer 2024",date:"2024-07-31",opp:"Average and Savage",outcome:"Win",score:"11 – 4",rs:11,ra:4,margin:7},
+  {season:"Summer 2024",date:"2024-08-07",opp:"The Sharks",outcome:"Win",score:"13 – 2",rs:13,ra:2,margin:11},
+  {season:"Summer 2024",date:"2024-08-28",opp:"The Sharks",outcome:"Win",score:"5 – 4",rs:5,ra:4,margin:1},
+  {season:"Summer 2024",date:"2024-08-28",opp:"Average and Savage",outcome:"Win",score:"4 – 2",rs:4,ra:2,margin:2},
+  {season:"Fall 2024",date:"2024-09-04",opp:"The Sharks",outcome:"Win",score:"23 – 2",rs:23,ra:2,margin:21},
+  {season:"Fall 2024",date:"2024-09-04",opp:"Bar flies",outcome:"Win",score:"21 – 1",rs:21,ra:1,margin:20},
+  {season:"Fall 2024",date:"2024-09-11",opp:"Team Gnar Gnar",outcome:"Win",score:"10 – 0",rs:10,ra:0,margin:10},
+  {season:"Fall 2024",date:"2024-09-25",opp:"Average and Savage",outcome:"Loss",score:"0 – 7",rs:0,ra:7,margin:-7},
+  {season:"Fall 2024",date:"2024-10-02",opp:"Just the Tipsy",outcome:"Loss",score:"2 – 3",rs:2,ra:3,margin:-1},
+  {season:"Fall 2024",date:"2024-10-09",opp:"Average and Savage",outcome:"Win",score:"4 – 3",rs:4,ra:3,margin:1},
+  {season:"Fall 2024",date:"2024-10-16",opp:"Just the Tipsy",outcome:"Win",score:"7 – 5",rs:7,ra:5,margin:2},
+  {season:"Fall 2024",date:"2024-10-16",opp:"Average and Savage",outcome:"Loss",score:"2 – 5",rs:2,ra:5,margin:-3},
+  {season:"Spring 2025",date:"2025-04-16",opp:"Average and Savage",outcome:"Win",score:"4 – 1",rs:4,ra:1,margin:3},
+  {season:"Spring 2025",date:"2025-04-23",opp:"KickTok Stars",outcome:"Win",score:"14 – 3",rs:14,ra:3,margin:11},
+  {season:"Spring 2025",date:"2025-04-30",opp:"Kick Us While We're Down",outcome:"Win",score:"6 – 1",rs:6,ra:1,margin:5},
+  {season:"Spring 2025",date:"2025-05-07",opp:"Just the Tipsy",outcome:"Tie",score:"1 – 1",rs:1,ra:1,margin:0},
+  {season:"Spring 2025",date:"2025-05-14",opp:"Kick Me Baby One More Time",outcome:"Win",score:"4 – 0",rs:4,ra:0,margin:4},
+  {season:"Spring 2025",date:"2025-05-28",opp:"Kick Us While We're Down",outcome:"Win",score:"3 – 2",rs:3,ra:2,margin:1},
+  {season:"Spring 2025",date:"2025-06-04",opp:"Just the Tipsy",outcome:"Loss",score:"2 – 5",rs:2,ra:5,margin:-3},
+  {season:"Summer 2025",date:"2025-06-25",opp:"On Wednesdays We Wear Pink",outcome:"Win",score:"3 – 1",rs:3,ra:1,margin:2},
+  {season:"Summer 2025",date:"2025-07-02",opp:"Kickin bass!",outcome:"Win",score:"13 – 0",rs:13,ra:0,margin:13},
+  {season:"Summer 2025",date:"2025-07-09",opp:"Just the Tipsy",outcome:"Win",score:"4 – 1",rs:4,ra:1,margin:3},
+  {season:"Summer 2025",date:"2025-08-06",opp:"Just the Tipsy",outcome:"Loss",score:"3 – 6",rs:3,ra:6,margin:-3},
+  {season:"Summer 2025",date:"2025-08-06",opp:"Average and Savage",outcome:"Win",score:"5 – 4",rs:5,ra:4,margin:1},
+  {season:"Summer 2025",date:"2025-08-13",opp:"On Wednesdays We Wear Pink",outcome:"Win",score:"7 – 0",rs:7,ra:0,margin:7},
+  {season:"Summer 2025",date:"2025-08-20",opp:"Average and Savage",outcome:"Win",score:"1 – 0",rs:1,ra:0,margin:1},
+  {season:"Fall 2025",date:"2025-08-27",opp:"Fo Life",outcome:"Tie",score:"10 – 10",rs:10,ra:10,margin:0},
+  {season:"Fall 2025",date:"2025-09-03",opp:"Just the Tipsy",outcome:"Win",score:"2 – 1",rs:2,ra:1,margin:1},
+  {season:"Fall 2025",date:"2025-09-10",opp:"Team Gnar Gnar",outcome:"Loss",score:"2 – 5",rs:2,ra:5,margin:-3},
+  {season:"Fall 2025",date:"2025-09-17",opp:"Average and Savage",outcome:"Win",score:"7 – 4",rs:7,ra:4,margin:3},
+  {season:"Fall 2025",date:"2025-09-24",opp:"Average and Savage",outcome:"Tie",score:"4 – 4",rs:4,ra:4,margin:0},
+  {season:"Fall 2025",date:"2025-10-01",opp:"Team Gnar Gnar",outcome:"Loss",score:"2 – 4",rs:2,ra:4,margin:-2},
+  {season:"Fall 2025",date:"2025-10-08",opp:"Fo Life",outcome:"Win",score:"4 – 0",rs:4,ra:0,margin:4},
+  {season:"Fall 2025",date:"2025-10-08",opp:"Team Gnar Gnar",outcome:"Loss",score:"0 – 2",rs:0,ra:2,margin:-2},
+  {season:"Spring 2026",date:"2026-04-08",opp:"Fo Life",outcome:"Win",score:"7 – 4",rs:7,ra:4,margin:3},
+  {season:"Spring 2026",date:"2026-04-22",opp:"Average and Savage",outcome:"Loss",score:"4 – 6",rs:4,ra:6,margin:-2},
+  {season:"Spring 2026",date:"2026-04-29",opp:"Fresh Kick of Ball Air",outcome:"Loss",score:"1 – 2",rs:1,ra:2,margin:-1},
+  {season:"Spring 2026",date:"2026-05-06",opp:"Just the Tipsy",outcome:"Loss",score:"1 – 2",rs:1,ra:2,margin:-1},
+  {season:"Spring 2026",date:"2026-05-13",opp:"Average and Savage",outcome:"Win",score:"4 – 2",rs:4,ra:2,margin:2},
+  {season:"Spring 2026",date:"2026-05-20",opp:"Kick Us While We're Down",outcome:"Win",score:"4 – 3",rs:4,ra:3,margin:1},
+  {season:"Spring 2026",date:"2026-05-27",opp:"Kick Us While We're Down",outcome:"Win",score:"4 – 3",rs:4,ra:3,margin:1},
+  {season:"Spring 2026",date:"2026-06-03",opp:"Fresh Kick of Ball Air",outcome:"Win",score:"11 – 3",rs:11,ra:3,margin:8},
+  {season:"Spring 2026",date:"2026-06-03",opp:"Just the Tipsy",outcome:"Loss",score:"4 – 8",rs:4,ra:8,margin:-4},
+  {season:"Summer 2026",date:"2026-07-01",opp:"Hot Cuts!",outcome:"Win",score:"7 – 3",rs:7,ra:3,margin:4},
+  {season:"Summer 2026",date:"2026-07-08",opp:"Average and Savage",outcome:"Win",score:"5 – 2",rs:5,ra:2,margin:3},
+  {season:"Summer 2026",date:"2026-07-15",opp:"Average and Savage",outcome:"Win",score:"8 – 3",rs:8,ra:3,margin:5},
+  {season:"Summer 2026",date:"2026-07-22",opp:"Kick Us While We're Down",outcome:"Win",score:"8 – 0",rs:8,ra:0,margin:8},
+  {season:"Summer 2026",date:"2026-07-29",opp:"Fo Life",outcome:"Win",score:"6 – 2",rs:6,ra:2,margin:4},
+  {season:"Summer 2026",date:"2026-08-05",opp:"Hot Cuts!",outcome:"Win",score:"8 – 0",rs:8,ra:0,margin:8},
+  {season:"Summer 2026",date:"2026-08-12",opp:"Just the Tipsy",outcome:"Win",score:"4 – 3",rs:4,ra:3,margin:1},
+  {season:"Fall 2026",date:"2026-08-19",opp:"Gnar Gnar",outcome:"Win",score:"3 – 1",rs:3,ra:1,margin:2}
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -854,6 +931,587 @@ function renderOpponents() {
 }
 renderOpponents();
 
+// ── Teams tab ──────────────────────────────────────────────────────────────────
+
+const ALL_LEAGUE_GAMES = [
+  {date:"2023-09-06",season:"Fall 2023",team1:"kick some PA-Ss",id1:669520,rs1:27,team2:"Ballbreakers",id2:666605,rs2:0},
+  {date:"2023-09-06",season:"Fall 2023",team1:"Gita Gang",id1:668944,rs1:2,team2:"Kick us while we’re down",id2:668982,rs2:3},
+  {date:"2023-09-06",season:"Fall 2023",team1:"Kick Cheney and the Shotguns",id1:653053,rs1:11,team2:"The Sharks",id2:652271,rs2:2},
+  {date:"2023-09-06",season:"Fall 2023",team1:"Basic Pitches",id1:656036,rs1:9,team2:"Kick and Balls",id2:653713,rs2:13},
+  {date:"2023-09-06",season:"Fall 2023",team1:"Trojans",id1:660805,rs1:2,team2:"Vaxxed & Waxxed",id2:649603,rs2:22},
+  {date:"2023-09-06",season:"Fall 2023",team1:"Kick Cheney and the Shotguns",id1:653053,rs1:6,team2:"MC Ballers",id2:662245,rs2:2},
+  {date:"2023-09-06",season:"Fall 2023",team1:"Team Gnar Gnar",id1:657089,rs1:11,team2:"2 Legit 2 Kick",id2:666618,rs2:7},
+  {date:"2023-09-06",season:"Fall 2023",team1:"Vaxxed & Waxxed",id1:649603,rs1:10,team2:"Just the Tipsy",id2:654345,rs2:5},
+  {date:"2023-09-13",season:"Fall 2023",team1:"Basic Pitches",id1:656036,rs1:6,team2:"Ballbreakers",id2:666605,rs2:2},
+  {date:"2023-09-13",season:"Fall 2023",team1:"Gita Gang",id1:668944,rs1:2,team2:"Kick Cheney and the Shotguns",id2:653053,rs2:17},
+  {date:"2023-09-13",season:"Fall 2023",team1:"Just the Tipsy",id1:654345,rs1:8,team2:"The Sharks",id2:652271,rs2:2},
+  {date:"2023-09-13",season:"Fall 2023",team1:"Kick and Balls",id1:653713,rs1:1,team2:"Team Gnar Gnar",id2:657089,rs2:8},
+  {date:"2023-09-13",season:"Fall 2023",team1:"Trojans",id1:660805,rs1:9,team2:"Gita Gang",id2:668944,rs2:9},
+  {date:"2023-09-13",season:"Fall 2023",team1:"MC Ballers",id1:662245,rs1:1,team2:"Just the Tipsy",id2:654345,rs2:8},
+  {date:"2023-09-13",season:"Fall 2023",team1:"kick some PA-Ss",id1:669520,rs1:10,team2:"2 Legit 2 Kick",id2:666618,rs2:7},
+  {date:"2023-09-13",season:"Fall 2023",team1:"Kick us while we’re down",id1:668982,rs1:5,team2:"Vaxxed & Waxxed",id2:649603,rs2:7},
+  {date:"2023-09-20",season:"Fall 2023",team1:"kick some PA-Ss",id1:669520,rs1:10,team2:"Team Gnar Gnar",id2:657089,rs2:9},
+  {date:"2023-09-20",season:"Fall 2023",team1:"Kick us while we’re down",id1:668982,rs1:6,team2:"Kick Cheney and the Shotguns",id2:653053,rs2:7},
+  {date:"2023-09-20",season:"Fall 2023",team1:"Just the Tipsy",id1:654345,rs1:17,team2:"Trojans",id2:660805,rs2:2},
+  {date:"2023-09-20",season:"Fall 2023",team1:"Team Gnar Gnar",id1:657089,rs1:23,team2:"Kick and Balls",id2:653713,rs2:1},
+  {date:"2023-09-20",season:"Fall 2023",team1:"The Sharks",id1:652271,rs1:7,team2:"Kick us while we’re down",id2:668982,rs2:8},
+  {date:"2023-09-20",season:"Fall 2023",team1:"Vaxxed & Waxxed",id1:649603,rs1:15,team2:"MC Ballers",id2:662245,rs2:2},
+  {date:"2023-09-20",season:"Fall 2023",team1:"Ballbreakers",id1:666605,rs1:4,team2:"Kick and Balls",id2:653713,rs2:5},
+  {date:"2023-09-20",season:"Fall 2023",team1:"Gita Gang",id1:668944,rs1:7,team2:"The Sharks",id2:652271,rs2:10},
+  {date:"2023-09-20",season:"Fall 2023",team1:"2 Legit 2 Kick",id1:666618,rs1:15,team2:"Basic Pitches",id2:656036,rs2:8},
+  {date:"2023-09-27",season:"Fall 2023",team1:"Ballbreakers",id1:666605,rs1:4,team2:"Team Gnar Gnar",id2:657089,rs2:14},
+  {date:"2023-09-27",season:"Fall 2023",team1:"Kick Cheney and the Shotguns",id1:653053,rs1:4,team2:"Just the Tipsy",id2:654345,rs2:5},
+  {date:"2023-09-27",season:"Fall 2023",team1:"Kick us while we’re down",id1:668982,rs1:19,team2:"Trojans",id2:660805,rs2:1},
+  {date:"2023-09-27",season:"Fall 2023",team1:"2 Legit 2 Kick",id1:666618,rs1:3,team2:"Ballbreakers",id2:666605,rs2:7},
+  {date:"2023-09-27",season:"Fall 2023",team1:"The Sharks",id1:652271,rs1:4,team2:"Vaxxed & Waxxed",id2:649603,rs2:10},
+  {date:"2023-09-27",season:"Fall 2023",team1:"MC Ballers",id1:662245,rs1:1,team2:"Kick us while we’re down",id2:668982,rs2:8},
+  {date:"2023-09-27",season:"Fall 2023",team1:"Basic Pitches",id1:656036,rs1:1,team2:"kick some PA-Ss",id2:669520,rs2:11},
+  {date:"2023-09-27",season:"Fall 2023",team1:"MC Ballers",id1:662245,rs1:6,team2:"Gita Gang",id2:668944,rs2:0},
+  {date:"2023-10-04",season:"Fall 2023",team1:"Ballbreakers",id1:666605,rs1:8,team2:"Basic Pitches",id2:656036,rs2:15},
+  {date:"2023-10-04",season:"Fall 2023",team1:"Kick and Balls",id1:653713,rs1:6,team2:"kick some PA-Ss",id2:669520,rs2:30},
+  {date:"2023-10-04",season:"Fall 2023",team1:"The Sharks",id1:652271,rs1:9,team2:"Trojans",id2:660805,rs2:7},
+  {date:"2023-10-04",season:"Fall 2023",team1:"Team Gnar Gnar",id1:657089,rs1:20,team2:"Basic Pitches",id2:656036,rs2:4},
+  {date:"2023-10-04",season:"Fall 2023",team1:"2 Legit 2 Kick",id1:666618,rs1:3,team2:"kick some PA-Ss",id2:669520,rs2:7},
+  {date:"2023-10-04",season:"Fall 2023",team1:"Trojans",id1:660805,rs1:7,team2:"MC Ballers",id2:662245,rs2:8},
+  {date:"2023-10-04",season:"Fall 2023",team1:"Vaxxed & Waxxed",id1:649603,rs1:10,team2:"Kick Cheney and the Shotguns",id2:653053,rs2:4},
+  {date:"2023-10-04",season:"Fall 2023",team1:"Just the Tipsy",id1:654345,rs1:9,team2:"Gita Gang",id2:668944,rs2:2},
+  {date:"2023-10-11",season:"Fall 2023",team1:"2 Legit 2 Kick",id1:666618,rs1:0,team2:"Basic Pitches",id2:656036,rs2:3},
+  {date:"2023-10-11",season:"Fall 2023",team1:"Gita Gang",id1:668944,rs1:2,team2:"Just the Tipsy",id2:654345,rs2:6},
+  {date:"2023-10-11",season:"Fall 2023",team1:"The Sharks",id1:652271,rs1:2,team2:"Kick Cheney and the Shotguns",id2:653053,rs2:18},
+  {date:"2023-10-11",season:"Fall 2023",team1:"Basic Pitches",id1:656036,rs1:3,team2:"kick some PA-Ss",id2:669520,rs2:5},
+  {date:"2023-10-11",season:"Fall 2023",team1:"Kick Cheney and the Shotguns",id1:653053,rs1:9,team2:"Just the Tipsy",id2:654345,rs2:6},
+  {date:"2023-10-11",season:"Fall 2023",team1:"Trojans",id1:660805,rs1:2,team2:"Vaxxed & Waxxed",id2:649603,rs2:13},
+  {date:"2023-10-11",season:"Fall 2023",team1:"Ballbreakers",id1:666605,rs1:6,team2:"Kick and Balls",id2:653713,rs2:5},
+  {date:"2023-10-11",season:"Fall 2023",team1:"MC Ballers",id1:662245,rs1:3,team2:"Kick us while we’re down",id2:668982,rs2:12},
+  {date:"2023-10-18",season:"Fall 2023",team1:"Ballbreakers",id1:666605,rs1:5,team2:"Team Gnar Gnar",id2:657089,rs2:18},
+  {date:"2023-10-18",season:"Fall 2023",team1:"Kick us while we’re down",id1:668982,rs1:3,team2:"Vaxxed & Waxxed",id2:649603,rs2:9},
+  {date:"2023-10-18",season:"Fall 2023",team1:"Team Gnar Gnar",id1:657089,rs1:5,team2:"kick some PA-Ss",id2:669520,rs2:3},
+  {date:"2023-10-18",season:"Fall 2023",team1:"Kick Cheney and the Shotguns",id1:653053,rs1:2,team2:"Vaxxed & Waxxed",id2:649603,rs2:3},
+  {date:"2024-04-24",season:"Spring 2024",team1:"Trojans",id1:712238,rs1:22,team2:"The Ball Kickers",id2:731620,rs2:1},
+  {date:"2024-04-24",season:"Spring 2024",team1:"Got The Runs",id1:736005,rs1:1,team2:"For Kicks and Giggles",id2:714758,rs2:5},
+  {date:"2024-04-24",season:"Spring 2024",team1:"Kick us while we’re down",id1:711397,rs1:20,team2:"Highly Educated, Poorly Executed",id2:727695,rs2:2},
+  {date:"2024-04-24",season:"Spring 2024",team1:"Move, Pitch, Get Out Da Way",id1:728087,rs1:2,team2:"Bumpy Mikers",id2:711562,rs2:7},
+  {date:"2024-04-24",season:"Spring 2024",team1:"Vaxxed & Waxxed",id1:711412,rs1:7,team2:"MC Ballers",id2:734970,rs2:0},
+  {date:"2024-04-24",season:"Spring 2024",team1:"Drinkers with a kicking problem",id1:730157,rs1:4,team2:"Hot Cuts!",id2:735687,rs2:2},
+  {date:"2024-05-01",season:"Spring 2024",team1:"Trojans",id1:712238,rs1:12,team2:"Got The Runs",id2:736005,rs2:5},
+  {date:"2024-05-01",season:"Spring 2024",team1:"The Ball Kickers",id1:731620,rs1:0,team2:"Hot Cuts!",id2:735687,rs2:12},
+  {date:"2024-05-01",season:"Spring 2024",team1:"Kick us while we’re down",id1:711397,rs1:3,team2:"Vaxxed & Waxxed",id2:711412,rs2:2},
+  {date:"2024-05-01",season:"Spring 2024",team1:"Bumpy Mikers",id1:711562,rs1:5,team2:"For Kicks and Giggles",id2:714758,rs2:7},
+  {date:"2024-05-01",season:"Spring 2024",team1:"MC Ballers",id1:734970,rs1:7,team2:"Highly Educated, Poorly Executed",id2:727695,rs2:2},
+  {date:"2024-05-01",season:"Spring 2024",team1:"Move, Pitch, Get Out Da Way",id1:728087,rs1:0,team2:"Drinkers with a kicking problem",id2:730157,rs2:16},
+  {date:"2024-05-08",season:"Spring 2024",team1:"Bumpy Mikers",id1:711562,rs1:3,team2:"Drinkers with a kicking problem",id2:730157,rs2:5},
+  {date:"2024-05-08",season:"Spring 2024",team1:"The Ball Kickers",id1:731620,rs1:3,team2:"Got The Runs",id2:736005,rs2:24},
+  {date:"2024-05-08",season:"Spring 2024",team1:"Vaxxed & Waxxed",id1:711412,rs1:4,team2:"Kick us while we’re down",id2:711397,rs2:5},
+  {date:"2024-05-08",season:"Spring 2024",team1:"For Kicks and Giggles",id1:714758,rs1:14,team2:"Move, Pitch, Get Out Da Way",id2:728087,rs2:0},
+  {date:"2024-05-08",season:"Spring 2024",team1:"Highly Educated, Poorly Executed",id1:727695,rs1:5,team2:"MC Ballers",id2:734970,rs2:6},
+  {date:"2024-05-08",season:"Spring 2024",team1:"Hot Cuts!",id1:735687,rs1:12,team2:"Trojans",id2:712238,rs2:2},
+  {date:"2024-05-15",season:"Spring 2024",team1:"Drinkers with a kicking problem",id1:730157,rs1:9,team2:"Trojans",id2:712238,rs2:2},
+  {date:"2024-05-15",season:"Spring 2024",team1:"For Kicks and Giggles",id1:714758,rs1:13,team2:"The Ball Kickers",id2:731620,rs2:1},
+  {date:"2024-05-15",season:"Spring 2024",team1:"Highly Educated, Poorly Executed",id1:727695,rs1:1,team2:"Kick us while we’re down",id2:711397,rs2:14},
+  {date:"2024-05-15",season:"Spring 2024",team1:"Hot Cuts!",id1:735687,rs1:11,team2:"Move, Pitch, Get Out Da Way",id2:728087,rs2:1},
+  {date:"2024-05-15",season:"Spring 2024",team1:"MC Ballers",id1:734970,rs1:1,team2:"Vaxxed & Waxxed",id2:711412,rs2:18},
+  {date:"2024-05-15",season:"Spring 2024",team1:"Got The Runs",id1:736005,rs1:9,team2:"Bumpy Mikers",id2:711562,rs2:7},
+  {date:"2024-05-22",season:"Spring 2024",team1:"Hot Cuts!",id1:735687,rs1:17,team2:"Got The Runs",id2:736005,rs2:12},
+  {date:"2024-05-22",season:"Spring 2024",team1:"Drinkers with a kicking problem",id1:730157,rs1:4,team2:"For Kicks and Giggles",id2:714758,rs2:2},
+  {date:"2024-05-22",season:"Spring 2024",team1:"Kick us while we’re down",id1:711397,rs1:15,team2:"MC Ballers",id2:734970,rs2:2},
+  {date:"2024-05-22",season:"Spring 2024",team1:"Bumpy Mikers",id1:711562,rs1:12,team2:"The Ball Kickers",id2:731620,rs2:4},
+  {date:"2024-05-22",season:"Spring 2024",team1:"Vaxxed & Waxxed",id1:711412,rs1:1,team2:"Highly Educated, Poorly Executed",id2:727695,rs2:0},
+  {date:"2024-05-22",season:"Spring 2024",team1:"Move, Pitch, Get Out Da Way",id1:728087,rs1:4,team2:"Trojans",id2:712238,rs2:18},
+  {date:"2024-06-26",season:"Spring 2024",team1:"The Ball Kickers",id1:731620,rs1:4,team2:"Drinkers with a kicking problem",id2:730157,rs2:5},
+  {date:"2024-06-26",season:"Spring 2024",team1:"Move, Pitch, Get Out Da Way",id1:728087,rs1:1,team2:"For Kicks and Giggles",id2:714758,rs2:23},
+  {date:"2024-06-26",season:"Spring 2024",team1:"Highly Educated, Poorly Executed",id1:727695,rs1:0,team2:"Kick us while we’re down",id2:711397,rs2:17},
+  {date:"2024-06-26",season:"Spring 2024",team1:"Got The Runs",id1:736005,rs1:8,team2:"Trojans",id2:712238,rs2:11},
+  {date:"2024-06-26",season:"Spring 2024",team1:"MC Ballers",id1:734970,rs1:3,team2:"Vaxxed & Waxxed",id2:711412,rs2:4},
+  {date:"2024-06-26",season:"Spring 2024",team1:"Bumpy Mikers",id1:711562,rs1:2,team2:"Hot Cuts!",id2:735687,rs2:15},
+  {date:"2024-07-03",season:"Spring 2024",team1:"Hot Cuts!",id1:735687,rs1:21,team2:"For Kicks and Giggles",id2:714758,rs2:9},
+  {date:"2024-07-03",season:"Spring 2024",team1:"Trojans",id1:712238,rs1:8,team2:"Drinkers with a kicking problem",id2:730157,rs2:12},
+  {date:"2024-07-03",season:"Spring 2024",team1:"Vaxxed & Waxxed",id1:711412,rs1:4,team2:"Kick us while we’re down",id2:711397,rs2:0},
+  {date:"2024-07-03",season:"Spring 2024",team1:"Hot Cuts!",id1:735687,rs1:5,team2:"Drinkers with a kicking problem",id2:730157,rs2:4},
+  {date:"2024-07-10",season:"Summer 2024",team1:"PIMPS",id1:755499,rs1:0,team2:"The Sharks",id2:748043,rs2:15},
+  {date:"2024-07-10",season:"Summer 2024",team1:"Don't Stop Ballieving",id1:746773,rs1:9,team2:"Rekickulous",id2:759628,rs2:2},
+  {date:"2024-07-10",season:"Summer 2024",team1:"Vaxxed & Waxxed",id1:755997,rs1:7,team2:"Kick us while we're down",id2:752145,rs2:0},
+  {date:"2024-07-10",season:"Summer 2024",team1:"Catch It With Your Face",id1:752270,rs1:4,team2:"Don't Stop Ballieving",id2:746773,rs2:5},
+  {date:"2024-07-10",season:"Summer 2024",team1:"Kickers with a Drinking Problem!",id1:764646,rs1:3,team2:"Average & Savage",id2:759393,rs2:4},
+  {date:"2024-07-10",season:"Summer 2024",team1:"Trojans",id1:758978,rs1:6,team2:"Hot Cuts!",id2:764709,rs2:7},
+  {date:"2024-07-17",season:"Summer 2024",team1:"Pulse Pounders",id1:756912,rs1:3,team2:"The Sharks",id2:748043,rs2:3},
+  {date:"2024-07-17",season:"Summer 2024",team1:"Rekickulous",id1:759628,rs1:3,team2:"Trojans",id2:758978,rs2:4},
+  {date:"2024-07-17",season:"Summer 2024",team1:"Vaxxed & Waxxed",id1:755997,rs1:9,team2:"Pulse Pounders",id2:756912,rs2:1},
+  {date:"2024-07-17",season:"Summer 2024",team1:"Catch It With Your Face",id1:752270,rs1:4,team2:"Don't Stop Ballieving",id2:746773,rs2:6},
+  {date:"2024-07-17",season:"Summer 2024",team1:"PIMPS",id1:755499,rs1:3,team2:"Kickers with a Drinking Problem!",id2:764646,rs2:10},
+  {date:"2024-07-17",season:"Summer 2024",team1:"Average & Savage",id1:759393,rs1:5,team2:"Kick us while we're down",id2:752145,rs2:7},
+  {date:"2024-07-24",season:"Summer 2024",team1:"The Sharks",id1:748043,rs1:7,team2:"Kickers with a Drinking Problem!",id2:764646,rs2:8},
+  {date:"2024-07-24",season:"Summer 2024",team1:"Rekickulous",id1:759628,rs1:9,team2:"Catch It With Your Face",id2:752270,rs2:13},
+  {date:"2024-07-24",season:"Summer 2024",team1:"Average & Savage",id1:759393,rs1:3,team2:"Pulse Pounders",id2:756912,rs2:2},
+  {date:"2024-07-24",season:"Summer 2024",team1:"Rekickulous",id1:759628,rs1:4,team2:"Trojans",id2:758978,rs2:9},
+  {date:"2024-07-24",season:"Summer 2024",team1:"Vaxxed & Waxxed",id1:755997,rs1:18,team2:"PIMPS",id2:755499,rs2:1},
+  {date:"2024-07-24",season:"Summer 2024",team1:"Hot Cuts!",id1:764709,rs1:7,team2:"Don't Stop Ballieving",id2:746773,rs2:6},
+  {date:"2024-07-31",season:"Summer 2024",team1:"Kickers with a Drinking Problem!",id1:764646,rs1:3,team2:"Vaxxed & Waxxed",id2:755997,rs2:12},
+  {date:"2024-07-31",season:"Summer 2024",team1:"Pulse Pounders",id1:756912,rs1:14,team2:"PIMPS",id2:755499,rs2:10},
+  {date:"2024-07-31",season:"Summer 2024",team1:"Average & Savage",id1:759393,rs1:4,team2:"Vaxxed & Waxxed",id2:755997,rs2:11},
+  {date:"2024-07-31",season:"Summer 2024",team1:"Catch It With Your Face",id1:752270,rs1:18,team2:"Hot Cuts!",id2:764709,rs2:2},
+  {date:"2024-07-31",season:"Summer 2024",team1:"Kick us while we're down",id1:752145,rs1:13,team2:"The Sharks",id2:748043,rs2:14},
+  {date:"2024-07-31",season:"Summer 2024",team1:"Don't Stop Ballieving",id1:746773,rs1:16,team2:"Trojans",id2:758978,rs2:2},
+  {date:"2024-08-07",season:"Summer 2024",team1:"PIMPS",id1:755499,rs1:0,team2:"Average & Savage",id2:759393,rs2:25},
+  {date:"2024-08-07",season:"Summer 2024",team1:"Trojans",id1:758978,rs1:10,team2:"Catch It With Your Face",id2:752270,rs2:8},
+  {date:"2024-08-07",season:"Summer 2024",team1:"Kickers with a Drinking Problem!",id1:764646,rs1:1,team2:"Kick us while we're down",id2:752145,rs2:4},
+  {date:"2024-08-07",season:"Summer 2024",team1:"Hot Cuts!",id1:764709,rs1:36,team2:"Rekickulous",id2:759628,rs2:9},
+  {date:"2024-08-07",season:"Summer 2024",team1:"Kick us while we're down",id1:752145,rs1:15,team2:"Pulse Pounders",id2:756912,rs2:3},
+  {date:"2024-08-07",season:"Summer 2024",team1:"The Sharks",id1:748043,rs1:2,team2:"Vaxxed & Waxxed",id2:755997,rs2:13},
+  {date:"2024-08-14",season:"Summer 2024",team1:"Trojans",id1:758978,rs1:3,team2:"Catch It With Your Face",id2:752270,rs2:13},
+  {date:"2024-08-14",season:"Summer 2024",team1:"Kick us while we're down",id1:752145,rs1:28,team2:"PIMPS",id2:755499,rs2:1},
+  {date:"2024-08-14",season:"Summer 2024",team1:"Don't Stop Ballieving",id1:746773,rs1:9,team2:"Hot Cuts!",id2:764709,rs2:7},
+  {date:"2024-08-14",season:"Summer 2024",team1:"The Sharks",id1:748043,rs1:8,team2:"Average & Savage",id2:759393,rs2:15},
+  {date:"2024-08-21",season:"Summer 2024",team1:"The Sharks",id1:748043,rs1:16,team2:"Kickers with a Drinking Problem!",id2:764646,rs2:9},
+  {date:"2024-08-21",season:"Summer 2024",team1:"Catch It With Your Face",id1:752270,rs1:8,team2:"Hot Cuts!",id2:764709,rs2:7},
+  {date:"2024-08-21",season:"Summer 2024",team1:"PIMPS",id1:755499,rs1:2,team2:"Kick us while we're down",id2:752145,rs2:10},
+  {date:"2024-08-21",season:"Summer 2024",team1:"Rekickulous",id1:759628,rs1:8,team2:"Trojans",id2:758978,rs2:9},
+  {date:"2024-08-21",season:"Summer 2024",team1:"Pulse Pounders",id1:756912,rs1:3,team2:"Average & Savage",id2:759393,rs2:4},
+  {date:"2024-08-21",season:"Summer 2024",team1:"Trojans",id1:758978,rs1:1,team2:"Don't Stop Ballieving",id2:746773,rs2:11},
+  {date:"2024-08-28",season:"Summer 2024",team1:"The Sharks",id1:748043,rs1:4,team2:"Vaxxed & Waxxed",id2:755997,rs2:5},
+  {date:"2024-08-28",season:"Summer 2024",team1:"Average & Savage",id1:759393,rs1:19,team2:"Kick us while we're down",id2:752145,rs2:1},
+  {date:"2024-08-28",season:"Summer 2024",team1:"Average & Savage",id1:759393,rs1:2,team2:"Vaxxed & Waxxed",id2:755997,rs2:4},
+  {date:"2024-08-28",season:"Summer 2024",team1:"Catch It With Your Face",id1:752270,rs1:5,team2:"Don't Stop Ballieving",id2:746773,rs2:6},
+  {date:"2024-09-04",season:"Fall 2024",team1:"Vaxxed & Waxxed",id1:777285,rs1:23,team2:"The Sharks",id2:780873,rs2:2},
+  {date:"2024-09-04",season:"Fall 2024",team1:"Hot Cuts!",id1:784098,rs1:10,team2:"Kick and Balls",id2:783052,rs2:0},
+  {date:"2024-09-04",season:"Fall 2024",team1:"Bar flies",id1:783979,rs1:1,team2:"Vaxxed & Waxxed",id2:777285,rs2:21},
+  {date:"2024-09-04",season:"Fall 2024",team1:"FoLife",id1:784393,rs1:11,team2:"JCO SMRFS",id2:778485,rs2:3},
+  {date:"2024-09-04",season:"Fall 2024",team1:"Average & Savage",id1:781298,rs1:9,team2:"Just the Tipsy",id2:782334,rs2:0},
+  {date:"2024-09-04",season:"Fall 2024",team1:"Blue Ball Busters",id1:780143,rs1:18,team2:"One Kick Wonders",id2:785386,rs2:2},
+  {date:"2024-09-11",season:"Fall 2024",team1:"Average & Savage",id1:781298,rs1:13,team2:"Bar flies",id2:783979,rs2:2},
+  {date:"2024-09-11",season:"Fall 2024",team1:"Hot Cuts!",id1:784098,rs1:9,team2:"Blue Ball Busters",id2:780143,rs2:10},
+  {date:"2024-09-11",season:"Fall 2024",team1:"Vaxxed & Waxxed",id1:777285,rs1:10,team2:"Team Gnar Gnar",id2:779945,rs2:0},
+  {date:"2024-09-11",season:"Fall 2024",team1:"Kick and Balls",id1:783052,rs1:0,team2:"FoLife",id2:784393,rs2:10},
+  {date:"2024-09-11",season:"Fall 2024",team1:"The Sharks",id1:780873,rs1:4,team2:"Just the Tipsy",id2:782334,rs2:17},
+  {date:"2024-09-11",season:"Fall 2024",team1:"One Kick Wonders",id1:785386,rs1:7,team2:"JCO SMRFS",id2:778485,rs2:8},
+  {date:"2024-09-18",season:"Fall 2024",team1:"The Sharks",id1:780873,rs1:7,team2:"Bar flies",id2:783979,rs2:7},
+  {date:"2024-09-18",season:"Fall 2024",team1:"Blue Ball Busters",id1:780143,rs1:15,team2:"Kick and Balls",id2:783052,rs2:6},
+  {date:"2024-09-18",season:"Fall 2024",team1:"Team Gnar Gnar",id1:779945,rs1:5,team2:"The Sharks",id2:780873,rs2:8},
+  {date:"2024-09-18",season:"Fall 2024",team1:"JCO SMRFS",id1:778485,rs1:2,team2:"Hot Cuts!",id2:784098,rs2:11},
+  {date:"2024-09-18",season:"Fall 2024",team1:"Team Gnar Gnar",id1:779945,rs1:2,team2:"Just the Tipsy",id2:782334,rs2:6},
+  {date:"2024-09-18",season:"Fall 2024",team1:"One Kick Wonders",id1:785386,rs1:2,team2:"FoLife",id2:784393,rs2:17},
+  {date:"2024-09-25",season:"Fall 2024",team1:"Just the Tipsy",id1:782334,rs1:7,team2:"Bar flies",id2:783979,rs2:1},
+  {date:"2024-09-25",season:"Fall 2024",team1:"FoLife",id1:784393,rs1:2,team2:"Blue Ball Busters",id2:780143,rs2:8},
+  {date:"2024-09-25",season:"Fall 2024",team1:"Team Gnar Gnar",id1:779945,rs1:3,team2:"Average & Savage",id2:781298,rs2:4},
+  {date:"2024-09-25",season:"Fall 2024",team1:"One Kick Wonders",id1:785386,rs1:2,team2:"Hot Cuts!",id2:784098,rs2:28},
+  {date:"2024-09-25",season:"Fall 2024",team1:"Vaxxed & Waxxed",id1:777285,rs1:0,team2:"Average & Savage",id2:781298,rs2:7},
+  {date:"2024-09-25",season:"Fall 2024",team1:"Kick and Balls",id1:783052,rs1:18,team2:"JCO SMRFS",id2:778485,rs2:3},
+  {date:"2024-10-02",season:"Fall 2024",team1:"Just the Tipsy",id1:782334,rs1:3,team2:"Vaxxed & Waxxed",id2:777285,rs2:2},
+  {date:"2024-10-02",season:"Fall 2024",team1:"JCO SMRFS",id1:778485,rs1:1,team2:"Blue Ball Busters",id2:780143,rs2:11},
+  {date:"2024-10-02",season:"Fall 2024",team1:"The Sharks",id1:780873,rs1:3,team2:"Average & Savage",id2:781298,rs2:12},
+  {date:"2024-10-02",season:"Fall 2024",team1:"Kick and Balls",id1:783052,rs1:11,team2:"One Kick Wonders",id2:785386,rs2:5},
+  {date:"2024-10-02",season:"Fall 2024",team1:"Bar flies",id1:783979,rs1:7,team2:"Team Gnar Gnar",id2:779945,rs2:11},
+  {date:"2024-10-02",season:"Fall 2024",team1:"Hot Cuts!",id1:784098,rs1:3,team2:"FoLife",id2:784393,rs2:4},
+  {date:"2024-10-09",season:"Fall 2024",team1:"Bar flies",id1:783979,rs1:5,team2:"The Sharks",id2:780873,rs2:6},
+  {date:"2024-10-09",season:"Fall 2024",team1:"FoLife",id1:784393,rs1:17,team2:"Kick and Balls",id2:783052,rs2:3},
+  {date:"2024-10-09",season:"Fall 2024",team1:"Just the Tipsy",id1:782334,rs1:4,team2:"Team Gnar Gnar",id2:779945,rs2:0},
+  {date:"2024-10-09",season:"Fall 2024",team1:"JCO SMRFS",id1:778485,rs1:10,team2:"One Kick Wonders",id2:785386,rs2:11},
+  {date:"2024-10-09",season:"Fall 2024",team1:"Average & Savage",id1:781298,rs1:3,team2:"Vaxxed & Waxxed",id2:777285,rs2:4},
+  {date:"2024-10-09",season:"Fall 2024",team1:"Blue Ball Busters",id1:780143,rs1:9,team2:"Hot Cuts!",id2:784098,rs2:7},
+  {date:"2024-10-16",season:"Fall 2024",team1:"Vaxxed & Waxxed",id1:777285,rs1:7,team2:"Just the Tipsy",id2:782334,rs2:5},
+  {date:"2024-10-16",season:"Fall 2024",team1:"Team Gnar Gnar",id1:779945,rs1:15,team2:"Bar flies",id2:783979,rs2:2},
+  {date:"2024-10-16",season:"Fall 2024",team1:"The Sharks",id1:780873,rs1:2,team2:"Average & Savage",id2:781298,rs2:12},
+  {date:"2024-10-16",season:"Fall 2024",team1:"Blue Ball Busters",id1:780143,rs1:6,team2:"FoLife",id2:784393,rs2:1},
+  {date:"2024-10-16",season:"Fall 2024",team1:"Vaxxed & Waxxed",id1:777285,rs1:2,team2:"Average & Savage",id2:781298,rs2:5},
+  {date:"2024-10-16",season:"Fall 2024",team1:"Hot Cuts!",id1:784098,rs1:4,team2:"Kick and Balls",id2:783052,rs2:2},
+  {date:"2025-04-16",season:"Spring 2025",team1:"Kick Me Baby One More Time",id1:859550,rs1:2,team2:"Just the Tipsy",id2:843637,rs2:1},
+  {date:"2025-04-16",season:"Spring 2025",team1:"Got the Runz",id1:845586,rs1:6,team2:"Trojans",id2:841861,rs2:5},
+  {date:"2025-04-16",season:"Spring 2025",team1:"Kicking grass takin names",id1:850637,rs1:8,team2:"FoLife",id2:859070,rs2:3},
+  {date:"2025-04-16",season:"Spring 2025",team1:"KickTok Stars",id1:857530,rs1:0,team2:"Kick Us While We're Down",id2:841649,rs2:7},
+  {date:"2025-04-16",season:"Spring 2025",team1:"Blue Ball Busters",id1:845991,rs1:6,team2:"MC Ballers",id2:853845,rs2:3},
+  {date:"2025-04-16",season:"Spring 2025",team1:"Hot Cuts!",id1:842675,rs1:0,team2:"Shit Kickers",id2:858787,rs2:2},
+  {date:"2025-04-16",season:"Spring 2025",team1:"Average & Savage",id1:843475,rs1:1,team2:"Vaxxed & Waxxed",id2:841643,rs2:4},
+  {date:"2025-04-23",season:"Spring 2025",team1:"Kick Me Baby One More Time",id1:859550,rs1:4,team2:"Kick Us While We're Down",id2:841649,rs2:1},
+  {date:"2025-04-23",season:"Spring 2025",team1:"Got the Runz",id1:845586,rs1:2,team2:"Blue Ball Busters",id2:845991,rs2:10},
+  {date:"2025-04-23",season:"Spring 2025",team1:"Ope!",id1:850003,rs1:7,team2:"Kicking grass takin names",id2:850637,rs2:23},
+  {date:"2025-04-23",season:"Spring 2025",team1:"Just the Tipsy",id1:843637,rs1:3,team2:"Average & Savage",id2:843475,rs2:4},
+  {date:"2025-04-23",season:"Spring 2025",team1:"Trojans",id1:841861,rs1:5,team2:"MC Ballers",id2:853845,rs2:6},
+  {date:"2025-04-23",season:"Spring 2025",team1:"FoLife",id1:859070,rs1:4,team2:"Hot Cuts!",id2:842675,rs2:10},
+  {date:"2025-04-23",season:"Spring 2025",team1:"Vaxxed & Waxxed",id1:841643,rs1:14,team2:"KickTok Stars",id2:857530,rs2:3},
+  {date:"2025-04-23",season:"Spring 2025",team1:"Hot Cuts!",id1:842675,rs1:13,team2:"Shit Kickers",id2:858787,rs2:8},
+  {date:"2025-04-30",season:"Spring 2025",team1:"Just the Tipsy",id1:843637,rs1:6,team2:"KickTok Stars",id2:857530,rs2:6},
+  {date:"2025-04-30",season:"Spring 2025",team1:"Shit Kickers",id1:858787,rs1:3,team2:"Kicking grass takin names",id2:850637,rs2:5},
+  {date:"2025-04-30",season:"Spring 2025",team1:"Kick Me Baby One More Time",id1:859550,rs1:3,team2:"Average & Savage",id2:843475,rs2:4},
+  {date:"2025-04-30",season:"Spring 2025",team1:"FoLife",id1:859070,rs1:7,team2:"Ope!",id2:850003,rs2:1},
+  {date:"2025-04-30",season:"Spring 2025",team1:"MC Ballers",id1:853845,rs1:17,team2:"Got the Runz",id2:845586,rs2:9},
+  {date:"2025-04-30",season:"Spring 2025",team1:"Vaxxed & Waxxed",id1:841643,rs1:6,team2:"Kick Us While We're Down",id2:841649,rs2:1},
+  {date:"2025-05-07",season:"Spring 2025",team1:"KickTok Stars",id1:857530,rs1:1,team2:"Kick Me Baby One More Time",id2:859550,rs2:4},
+  {date:"2025-05-07",season:"Spring 2025",team1:"MC Ballers",id1:853845,rs1:3,team2:"Blue Ball Busters",id2:845991,rs2:4},
+  {date:"2025-05-07",season:"Spring 2025",team1:"FoLife",id1:859070,rs1:2,team2:"Shit Kickers",id2:858787,rs2:2},
+  {date:"2025-05-07",season:"Spring 2025",team1:"Just the Tipsy",id1:843637,rs1:1,team2:"Vaxxed & Waxxed",id2:841643,rs2:1},
+  {date:"2025-05-07",season:"Spring 2025",team1:"Trojans",id1:841861,rs1:10,team2:"Got the Runz",id2:845586,rs2:6},
+  {date:"2025-05-07",season:"Spring 2025",team1:"Ope!",id1:850003,rs1:3,team2:"Hot Cuts!",id2:842675,rs2:4},
+  {date:"2025-05-07",season:"Spring 2025",team1:"Kick Us While We're Down",id1:841649,rs1:2,team2:"Average & Savage",id2:843475,rs2:9},
+  {date:"2025-05-14",season:"Spring 2025",team1:"Average & Savage",id1:843475,rs1:11,team2:"KickTok Stars",id2:857530,rs2:3},
+  {date:"2025-05-14",season:"Spring 2025",team1:"Kicking grass takin names",id1:850637,rs1:4,team2:"Hot Cuts!",id2:842675,rs2:7},
+  {date:"2025-05-14",season:"Spring 2025",team1:"Shit Kickers",id1:858787,rs1:17,team2:"Ope!",id2:850003,rs2:3},
+  {date:"2025-05-14",season:"Spring 2025",team1:"Kick Us While We're Down",id1:841649,rs1:2,team2:"Just the Tipsy",id2:843637,rs2:6},
+  {date:"2025-05-14",season:"Spring 2025",team1:"Kicking grass takin names",id1:850637,rs1:7,team2:"FoLife",id2:859070,rs2:3},
+  {date:"2025-05-14",season:"Spring 2025",team1:"Blue Ball Busters",id1:845991,rs1:18,team2:"Trojans",id2:841861,rs2:3},
+  {date:"2025-05-14",season:"Spring 2025",team1:"Vaxxed & Waxxed",id1:841643,rs1:4,team2:"Kick Me Baby One More Time",id2:859550,rs2:0},
+  {date:"2025-05-14",season:"Spring 2025",team1:"Got the Runz",id1:845586,rs1:6,team2:"MC Ballers",id2:853845,rs2:4},
+  {date:"2025-05-28",season:"Spring 2025",team1:"KickTok Stars",id1:857530,rs1:4,team2:"Just the Tipsy",id2:843637,rs2:10},
+  {date:"2025-05-28",season:"Spring 2025",team1:"MC Ballers",id1:853845,rs1:6,team2:"Trojans",id2:841861,rs2:7},
+  {date:"2025-05-28",season:"Spring 2025",team1:"Ope!",id1:850003,rs1:1,team2:"Kicking grass takin names",id2:850637,rs2:6},
+  {date:"2025-05-28",season:"Spring 2025",team1:"Kick Us While We're Down",id1:841649,rs1:2,team2:"Vaxxed & Waxxed",id2:841643,rs2:3},
+  {date:"2025-05-28",season:"Spring 2025",team1:"Blue Ball Busters",id1:845991,rs1:14,team2:"Got the Runz",id2:845586,rs2:11},
+  {date:"2025-05-28",season:"Spring 2025",team1:"Shit Kickers",id1:858787,rs1:3,team2:"Ope!",id2:850003,rs2:1},
+  {date:"2025-05-28",season:"Spring 2025",team1:"Average & Savage",id1:843475,rs1:0,team2:"Kick Me Baby One More Time",id2:859550,rs2:4},
+  {date:"2025-05-28",season:"Spring 2025",team1:"Hot Cuts!",id1:842675,rs1:2,team2:"FoLife",id2:859070,rs2:4},
+  {date:"2025-06-04",season:"Spring 2025",team1:"Kick Us While We're Down",id1:841649,rs1:3,team2:"Just the Tipsy",id2:843637,rs2:7},
+  {date:"2025-06-04",season:"Spring 2025",team1:"Ope!",id1:850003,rs1:4,team2:"FoLife",id2:859070,rs2:5},
+  {date:"2025-06-04",season:"Spring 2025",team1:"Got the Runz",id1:845586,rs1:2,team2:"Blue Ball Busters",id2:845991,rs2:5},
+  {date:"2025-06-04",season:"Spring 2025",team1:"Just the Tipsy",id1:843637,rs1:5,team2:"Vaxxed & Waxxed",id2:841643,rs2:2},
+  {date:"2025-06-04",season:"Spring 2025",team1:"FoLife",id1:859070,rs1:5,team2:"Kicking grass takin names",id2:850637,rs2:3},
+  {date:"2025-06-04",season:"Spring 2025",team1:"MC Ballers",id1:853845,rs1:5,team2:"Trojans",id2:841861,rs2:7},
+  {date:"2025-06-04",season:"Spring 2025",team1:"KickTok Stars",id1:857530,rs1:1,team2:"Average & Savage",id2:843475,rs2:10},
+  {date:"2025-06-04",season:"Spring 2025",team1:"Shit Kickers",id1:858787,rs1:5,team2:"Hot Cuts!",id2:842675,rs2:0},
+  {date:"2025-06-11",season:"Spring 2025",team1:"Average & Savage",id1:843475,rs1:2,team2:"Kick Me Baby One More Time",id2:859550,rs2:0},
+  {date:"2025-06-11",season:"Spring 2025",team1:"FoLife",id1:859070,rs1:7,team2:"Shit Kickers",id2:858787,rs2:9},
+  {date:"2025-06-11",season:"Spring 2025",team1:"Just the Tipsy",id1:843637,rs1:0,team2:"Average & Savage",id2:843475,rs2:2},
+  {date:"2025-06-11",season:"Spring 2025",team1:"Trojans",id1:841861,rs1:10,team2:"Blue Ball Busters",id2:845991,rs2:11},
+  {date:"2025-06-25",season:"Summer 2025",team1:"Kickin bass!",id1:876043,rs1:5,team2:"Just the Tipsy",id2:876296,rs2:9},
+  {date:"2025-06-25",season:"Summer 2025",team1:"Recess Ramblers",id1:881750,rs1:3,team2:"Hot Cuts!",id2:876078,rs2:15},
+  {date:"2025-06-25",season:"Summer 2025",team1:"FoLife",id1:881965,rs1:10,team2:"Got the Runs",id2:882626,rs2:5},
+  {date:"2025-06-25",season:"Summer 2025",team1:"On Wednesdays We Wear Pink",id1:869079,rs1:2,team2:"Just the Tipsy",id2:876296,rs2:7},
+  {date:"2025-06-25",season:"Summer 2025",team1:"Kickin bass!",id1:876043,rs1:0,team2:"Average and Savage",id2:876117,rs2:10},
+  {date:"2025-06-25",season:"Summer 2025",team1:"Kicking Coatis",id1:886604,rs1:1,team2:"Trojans",id2:870970,rs2:16},
+  {date:"2025-06-25",season:"Summer 2025",team1:"Vaxxed & Waxxed",id1:872611,rs1:3,team2:"On Wednesdays We Wear Pink",id2:869079,rs2:1},
+  {date:"2025-06-25",season:"Summer 2025",team1:"HR Violations",id1:875288,rs1:2,team2:"Kick Us While We're Down",id2:877480,rs2:9},
+  {date:"2025-06-25",season:"Summer 2025",team1:"Kicking Coatis",id1:886604,rs1:2,team2:"New Kicks on the Block",id2:873151,rs2:12},
+  {date:"2025-07-02",season:"Summer 2025",team1:"On Wednesdays We Wear Pink",id1:869079,rs1:1,team2:"Average and Savage",id2:876117,rs2:4},
+  {date:"2025-07-02",season:"Summer 2025",team1:"FoLife",id1:881965,rs1:19,team2:"Kicking Coatis",id2:886604,rs2:4},
+  {date:"2025-07-02",season:"Summer 2025",team1:"Vaxxed & Waxxed",id1:872611,rs1:13,team2:"Kickin bass!",id2:876043,rs2:0},
+  {date:"2025-07-02",season:"Summer 2025",team1:"Hot Cuts!",id1:876078,rs1:17,team2:"HR Violations",id2:875288,rs2:0},
+  {date:"2025-07-02",season:"Summer 2025",team1:"New Kicks on the Block",id1:873151,rs1:23,team2:"Got the Runs",id2:882626,rs2:8},
+  {date:"2025-07-02",season:"Summer 2025",team1:"Kick Us While We're Down",id1:877480,rs1:10,team2:"HR Violations",id2:875288,rs2:7},
+  {date:"2025-07-09",season:"Summer 2025",team1:"Just the Tipsy",id1:876296,rs1:3,team2:"On Wednesdays We Wear Pink",id2:869079,rs2:6},
+  {date:"2025-07-09",season:"Summer 2025",team1:"Trojans",id1:870970,rs1:14,team2:"Got the Runs",id2:882626,rs2:13},
+  {date:"2025-07-09",season:"Summer 2025",team1:"Recess Ramblers",id1:881750,rs1:2,team2:"Kick Us While We're Down",id2:877480,rs2:7},
+  {date:"2025-07-09",season:"Summer 2025",team1:"Just the Tipsy",id1:876296,rs1:1,team2:"Vaxxed & Waxxed",id2:872611,rs2:4},
+  {date:"2025-07-09",season:"Summer 2025",team1:"FoLife",id1:881965,rs1:13,team2:"New Kicks on the Block",id2:873151,rs2:0},
+  {date:"2025-07-09",season:"Summer 2025",team1:"Hot Cuts!",id1:876078,rs1:4,team2:"Recess Ramblers",id2:881750,rs2:0},
+  {date:"2025-07-09",season:"Summer 2025",team1:"Average and Savage",id1:876117,rs1:11,team2:"Kickin bass!",id2:876043,rs2:0},
+  {date:"2025-07-09",season:"Summer 2025",team1:"New Kicks on the Block",id1:873151,rs1:17,team2:"Kicking Coatis",id2:886604,rs2:1},
+  {date:"2025-07-09",season:"Summer 2025",team1:"HR Violations",id1:875288,rs1:0,team2:"Hot Cuts!",id2:876078,rs2:4},
+  {date:"2025-08-06",season:"Summer 2025",team1:"On Wednesdays We Wear Pink",id1:869079,rs1:11,team2:"Kickin bass!",id2:876043,rs2:4},
+  {date:"2025-08-06",season:"Summer 2025",team1:"Kicking Coatis",id1:886604,rs1:4,team2:"Got the Runs",id2:882626,rs2:15},
+  {date:"2025-08-06",season:"Summer 2025",team1:"HR Violations",id1:875288,rs1:1,team2:"Recess Ramblers",id2:881750,rs2:1},
+  {date:"2025-08-06",season:"Summer 2025",team1:"Just the Tipsy",id1:876296,rs1:6,team2:"Vaxxed & Waxxed",id2:872611,rs2:3},
+  {date:"2025-08-06",season:"Summer 2025",team1:"Trojans",id1:870970,rs1:2,team2:"FoLife",id2:881965,rs2:7},
+  {date:"2025-08-06",season:"Summer 2025",team1:"Kick Us While We're Down",id1:877480,rs1:10,team2:"Recess Ramblers",id2:881750,rs2:3},
+  {date:"2025-08-06",season:"Summer 2025",team1:"Average and Savage",id1:876117,rs1:4,team2:"Vaxxed & Waxxed",id2:872611,rs2:5},
+  {date:"2025-08-06",season:"Summer 2025",team1:"New Kicks on the Block",id1:873151,rs1:9,team2:"Trojans",id2:870970,rs2:6},
+  {date:"2025-08-06",season:"Summer 2025",team1:"Kick Us While We're Down",id1:877480,rs1:4,team2:"Hot Cuts!",id2:876078,rs2:6},
+  {date:"2025-08-13",season:"Summer 2025",team1:"Kickin bass!",id1:876043,rs1:1,team2:"On Wednesdays We Wear Pink",id2:869079,rs2:4},
+  {date:"2025-08-13",season:"Summer 2025",team1:"Kicking Coatis",id1:886604,rs1:5,team2:"Got the Runs",id2:882626,rs2:16},
+  {date:"2025-08-13",season:"Summer 2025",team1:"Recess Ramblers",id1:881750,rs1:1,team2:"Kick Us While We're Down",id2:877480,rs2:14},
+  {date:"2025-08-13",season:"Summer 2025",team1:"On Wednesdays We Wear Pink",id1:869079,rs1:0,team2:"Vaxxed & Waxxed",id2:872611,rs2:7},
+  {date:"2025-08-13",season:"Summer 2025",team1:"Got the Runs",id1:882626,rs1:3,team2:"FoLife",id2:881965,rs2:13},
+  {date:"2025-08-13",season:"Summer 2025",team1:"HR Violations",id1:875288,rs1:3,team2:"Hot Cuts!",id2:876078,rs2:20},
+  {date:"2025-08-20",season:"Summer 2025",team1:"Just the Tipsy",id1:876296,rs1:1,team2:"Average and Savage",id2:876117,rs2:3},
+  {date:"2025-08-20",season:"Summer 2025",team1:"Trojans",id1:870970,rs1:9,team2:"New Kicks on the Block",id2:873151,rs2:10},
+  {date:"2025-08-20",season:"Summer 2025",team1:"Average and Savage",id1:876117,rs1:0,team2:"Vaxxed & Waxxed",id2:872611,rs2:1},
+  {date:"2025-08-20",season:"Summer 2025",team1:"New Kicks on the Block",id1:873151,rs1:5,team2:"FoLife",id2:881965,rs2:9},
+  {date:"2025-08-20",season:"Summer 2025",team1:"Kick Us While We're Down",id1:877480,rs1:11,team2:"Hot Cuts!",id2:876078,rs2:15},
+  {date:"2025-08-27",season:"Fall 2025",team1:"FoLife",id1:908384,rs1:10,team2:"Vaxxed & Waxxed",id2:900063,rs2:10},
+  {date:"2025-08-27",season:"Fall 2025",team1:"Ope!",id1:902503,rs1:5,team2:"Cheaper by the Dozen",id2:910561,rs2:5},
+  {date:"2025-08-27",season:"Fall 2025",team1:"MC Ballers",id1:898891,rs1:7,team2:"Hot Cuts!",id2:898037,rs2:8},
+  {date:"2025-08-27",season:"Fall 2025",team1:"Blue Ball Busters",id1:902753,rs1:6,team2:"Cheaper by the Dozen",id2:910561,rs2:8},
+  {date:"2025-08-27",season:"Fall 2025",team1:"Just the Tipsy",id1:910047,rs1:5,team2:"Average AND Savage",id2:901098,rs2:8},
+  {date:"2025-08-27",season:"Fall 2025",team1:"The Sharks",id1:906479,rs1:12,team2:"Kick us while we’re down",id2:907337,rs2:2},
+  {date:"2025-09-03",season:"Fall 2025",team1:"FoLife",id1:908384,rs1:3,team2:"Team Gnar Gnar",id2:908081,rs2:7},
+  {date:"2025-09-03",season:"Fall 2025",team1:"Hot Cuts!",id1:898037,rs1:8,team2:"The Sharks",id2:906479,rs2:2},
+  {date:"2025-09-03",season:"Fall 2025",team1:"Team Gnar Gnar",id1:908081,rs1:4,team2:"Average AND Savage",id2:901098,rs2:5},
+  {date:"2025-09-03",season:"Fall 2025",team1:"Ope!",id1:902503,rs1:3,team2:"MC Ballers",id2:898891,rs2:9},
+  {date:"2025-09-03",season:"Fall 2025",team1:"Vaxxed & Waxxed",id1:900063,rs1:2,team2:"Just the Tipsy",id2:910047,rs2:1},
+  {date:"2025-09-10",season:"Fall 2025",team1:"Just the Tipsy",id1:910047,rs1:8,team2:"FoLife",id2:908384,rs2:6},
+  {date:"2025-09-10",season:"Fall 2025",team1:"Ope!",id1:902503,rs1:0,team2:"The Sharks",id2:906479,rs2:12},
+  {date:"2025-09-10",season:"Fall 2025",team1:"MC Ballers",id1:898891,rs1:0,team2:"Kick us while we’re down",id2:907337,rs2:9},
+  {date:"2025-09-10",season:"Fall 2025",team1:"Hot Cuts!",id1:898037,rs1:0,team2:"Blue Ball Busters",id2:902753,rs2:4},
+  {date:"2025-09-10",season:"Fall 2025",team1:"Team Gnar Gnar",id1:908081,rs1:5,team2:"Vaxxed & Waxxed",id2:900063,rs2:2},
+  {date:"2025-09-10",season:"Fall 2025",team1:"Cheaper by the Dozen",id1:910561,rs1:1,team2:"Hot Cuts!",id2:898037,rs2:7},
+  {date:"2025-09-17",season:"Fall 2025",team1:"Average AND Savage",id1:901098,rs1:4,team2:"Vaxxed & Waxxed",id2:900063,rs2:7},
+  {date:"2025-09-17",season:"Fall 2025",team1:"The Sharks",id1:906479,rs1:1,team2:"Blue Ball Busters",id2:902753,rs2:16},
+  {date:"2025-09-17",season:"Fall 2025",team1:"Average AND Savage",id1:901098,rs1:7,team2:"FoLife",id2:908384,rs2:6},
+  {date:"2025-09-17",season:"Fall 2025",team1:"MC Ballers",id1:898891,rs1:5,team2:"The Sharks",id2:906479,rs2:3},
+  {date:"2025-09-17",season:"Fall 2025",team1:"Team Gnar Gnar",id1:908081,rs1:4,team2:"Just the Tipsy",id2:910047,rs2:4},
+  {date:"2025-09-17",season:"Fall 2025",team1:"Kick us while we’re down",id1:907337,rs1:11,team2:"Ope!",id2:902503,rs2:0},
+  {date:"2025-09-24",season:"Fall 2025",team1:"Hot Cuts!",id1:898037,rs1:15,team2:"Ope!",id2:902503,rs2:3},
+  {date:"2025-09-24",season:"Fall 2025",team1:"Blue Ball Busters",id1:902753,rs1:11,team2:"MC Ballers",id2:898891,rs2:1},
+  {date:"2025-09-24",season:"Fall 2025",team1:"FoLife",id1:908384,rs1:1,team2:"Team Gnar Gnar",id2:908081,rs2:5},
+  {date:"2025-09-24",season:"Fall 2025",team1:"Kick us while we’re down",id1:907337,rs1:8,team2:"Blue Ball Busters",id2:902753,rs2:14},
+  {date:"2025-09-24",season:"Fall 2025",team1:"Vaxxed & Waxxed",id1:900063,rs1:4,team2:"Average AND Savage",id2:901098,rs2:4},
+  {date:"2025-09-24",season:"Fall 2025",team1:"The Sharks",id1:906479,rs1:5,team2:"Cheaper by the Dozen",id2:910561,rs2:2},
+  {date:"2025-10-01",season:"Fall 2025",team1:"Just the Tipsy",id1:910047,rs1:11,team2:"FoLife",id2:908384,rs2:7},
+  {date:"2025-10-01",season:"Fall 2025",team1:"Blue Ball Busters",id1:902753,rs1:11,team2:"Ope!",id2:902503,rs2:5},
+  {date:"2025-10-01",season:"Fall 2025",team1:"Average AND Savage",id1:901098,rs1:1,team2:"Just the Tipsy",id2:910047,rs2:11},
+  {date:"2025-10-01",season:"Fall 2025",team1:"Kick us while we’re down",id1:907337,rs1:1,team2:"Hot Cuts!",id2:898037,rs2:8},
+  {date:"2025-10-01",season:"Fall 2025",team1:"Vaxxed & Waxxed",id1:900063,rs1:2,team2:"Team Gnar Gnar",id2:908081,rs2:4},
+  {date:"2025-10-01",season:"Fall 2025",team1:"Cheaper by the Dozen",id1:910561,rs1:2,team2:"MC Ballers",id2:898891,rs2:4},
+  {date:"2025-10-08",season:"Fall 2025",team1:"FoLife",id1:908384,rs1:0,team2:"Vaxxed & Waxxed",id2:900063,rs2:4},
+  {date:"2025-10-08",season:"Fall 2025",team1:"Cheaper by the Dozen",id1:910561,rs1:0,team2:"The Sharks",id2:906479,rs2:6},
+  {date:"2025-10-08",season:"Fall 2025",team1:"Vaxxed & Waxxed",id1:900063,rs1:0,team2:"Team Gnar Gnar",id2:908081,rs2:2},
+  {date:"2025-10-08",season:"Fall 2025",team1:"Ope!",id1:902503,rs1:1,team2:"Hot Cuts!",id2:898037,rs2:12},
+  {date:"2025-10-08",season:"Fall 2025",team1:"Average AND Savage",id1:901098,rs1:2,team2:"Just the Tipsy",id2:910047,rs2:4},
+  {date:"2025-10-08",season:"Fall 2025",team1:"Kick us while we’re down",id1:907337,rs1:9,team2:"MC Ballers",id2:898891,rs2:3},
+  {date:"2025-10-15",season:"Fall 2025",team1:"The Sharks",id1:906479,rs1:5,team2:"Blue Ball Busters",id2:902753,rs2:4},
+  {date:"2025-10-15",season:"Fall 2025",team1:"Kick us while we’re down",id1:907337,rs1:6,team2:"Hot Cuts!",id2:898037,rs2:5},
+  {date:"2025-10-15",season:"Fall 2025",team1:"Just the Tipsy",id1:910047,rs1:2,team2:"Team Gnar Gnar",id2:908081,rs2:5},
+  {date:"2025-10-15",season:"Fall 2025",team1:"Kick us while we’re down",id1:907337,rs1:3,team2:"The Sharks",id2:906479,rs2:2},
+  {date:"2026-04-08",season:"Spring 2026",team1:"Kick Us While We’re Down",id1:972299,rs1:15,team2:"Fresh Kick of Ball Air",id2:984260,rs2:22},
+  {date:"2026-04-08",season:"Spring 2026",team1:"The Sharks",id1:985443,rs1:4,team2:"MC Ballers",id2:982777,rs2:2},
+  {date:"2026-04-08",season:"Spring 2026",team1:"Fo Life",id1:958064,rs1:4,team2:"Vaxxed & Waxxed",id2:963894,rs2:7},
+  {date:"2026-04-08",season:"Spring 2026",team1:"kick",id1:983862,rs1:17,team2:"Ope!",id2:972945,rs2:9},
+  {date:"2026-04-08",season:"Spring 2026",team1:"Average AND Savage",id1:982601,rs1:2,team2:"Just the Tipsy",id2:965690,rs2:11},
+  {date:"2026-04-08",season:"Spring 2026",team1:"Trojans",id1:966028,rs1:5,team2:"Hot Cuts!",id2:963248,rs2:11},
+  {date:"2026-04-22",season:"Spring 2026",team1:"Fresh Kick of Ball Air",id1:984260,rs1:7,team2:"Fo Life",id2:958064,rs2:1},
+  {date:"2026-04-22",season:"Spring 2026",team1:"Ope!",id1:972945,rs1:1,team2:"Trojans",id2:966028,rs2:7},
+  {date:"2026-04-22",season:"Spring 2026",team1:"Just the Tipsy",id1:965690,rs1:5,team2:"Kick Us While We’re Down",id2:972299,rs2:3},
+  {date:"2026-04-22",season:"Spring 2026",team1:"The Sharks",id1:985443,rs1:10,team2:"kick",id2:983862,rs2:3},
+  {date:"2026-04-22",season:"Spring 2026",team1:"Average AND Savage",id1:982601,rs1:6,team2:"Vaxxed & Waxxed",id2:963894,rs2:4},
+  {date:"2026-04-22",season:"Spring 2026",team1:"Hot Cuts!",id1:963248,rs1:7,team2:"MC Ballers",id2:982777,rs2:1},
+  {date:"2026-04-29",season:"Spring 2026",team1:"Vaxxed & Waxxed",id1:963894,rs1:1,team2:"Fresh Kick of Ball Air",id2:984260,rs2:2},
+  {date:"2026-04-29",season:"Spring 2026",team1:"Ope!",id1:972945,rs1:1,team2:"The Sharks",id2:985443,rs2:10},
+  {date:"2026-04-29",season:"Spring 2026",team1:"kick",id1:983862,rs1:2,team2:"Hot Cuts!",id2:963248,rs2:3},
+  {date:"2026-04-29",season:"Spring 2026",team1:"Just the Tipsy",id1:965690,rs1:5,team2:"Fo Life",id2:958064,rs2:3},
+  {date:"2026-04-29",season:"Spring 2026",team1:"MC Ballers",id1:982777,rs1:2,team2:"Trojans",id2:966028,rs2:3},
+  {date:"2026-05-06",season:"Spring 2026",team1:"Fresh Kick of Ball Air",id1:984260,rs1:7,team2:"Average AND Savage",id2:982601,rs2:4},
+  {date:"2026-05-06",season:"Spring 2026",team1:"Trojans",id1:966028,rs1:8,team2:"kick",id2:983862,rs2:13},
+  {date:"2026-05-06",season:"Spring 2026",team1:"Just the Tipsy",id1:965690,rs1:2,team2:"Vaxxed & Waxxed",id2:963894,rs2:1},
+  {date:"2026-05-06",season:"Spring 2026",team1:"Ope!",id1:972945,rs1:4,team2:"MC Ballers",id2:982777,rs2:5},
+  {date:"2026-05-06",season:"Spring 2026",team1:"Fo Life",id1:958064,rs1:2,team2:"Kick Us While We’re Down",id2:972299,rs2:1},
+  {date:"2026-05-06",season:"Spring 2026",team1:"Hot Cuts!",id1:963248,rs1:10,team2:"The Sharks",id2:985443,rs2:3},
+  {date:"2026-05-13",season:"Spring 2026",team1:"Fo Life",id1:958064,rs1:1,team2:"Fresh Kick of Ball Air",id2:984260,rs2:7},
+  {date:"2026-05-13",season:"Spring 2026",team1:"kick",id1:983862,rs1:1,team2:"Trojans",id2:966028,rs2:9},
+  {date:"2026-05-13",season:"Spring 2026",team1:"Kick Us While We’re Down",id1:972299,rs1:1,team2:"Just the Tipsy",id2:965690,rs2:2},
+  {date:"2026-05-13",season:"Spring 2026",team1:"The Sharks",id1:985443,rs1:0,team2:"Hot Cuts!",id2:963248,rs2:4},
+  {date:"2026-05-13",season:"Spring 2026",team1:"Vaxxed & Waxxed",id1:963894,rs1:4,team2:"Average AND Savage",id2:982601,rs2:2},
+  {date:"2026-05-13",season:"Spring 2026",team1:"MC Ballers",id1:982777,rs1:5,team2:"Ope!",id2:972945,rs2:5},
+  {date:"2026-05-20",season:"Spring 2026",team1:"Hot Cuts!",id1:963248,rs1:3,team2:"Ope!",id2:972945,rs2:2},
+  {date:"2026-05-20",season:"Spring 2026",team1:"Average AND Savage",id1:982601,rs1:1,team2:"Fo Life",id2:958064,rs2:1},
+  {date:"2026-05-20",season:"Spring 2026",team1:"Trojans",id1:966028,rs1:7,team2:"The Sharks",id2:985443,rs2:4},
+  {date:"2026-05-20",season:"Spring 2026",team1:"Vaxxed & Waxxed",id1:963894,rs1:4,team2:"Kick Us While We’re Down",id2:972299,rs2:3},
+  {date:"2026-05-20",season:"Spring 2026",team1:"MC Ballers",id1:982777,rs1:1,team2:"kick",id2:983862,rs2:3},
+  {date:"2026-05-27",season:"Spring 2026",team1:"Kick Us While We’re Down",id1:972299,rs1:3,team2:"Vaxxed & Waxxed",id2:963894,rs2:4},
+  {date:"2026-05-27",season:"Spring 2026",team1:"Ope!",id1:972945,rs1:2,team2:"The Sharks",id2:985443,rs2:11},
+  {date:"2026-05-27",season:"Spring 2026",team1:"Fo Life",id1:958064,rs1:3,team2:"Average AND Savage",id2:982601,rs2:2},
+  {date:"2026-05-27",season:"Spring 2026",team1:"MC Ballers",id1:982777,rs1:7,team2:"kick",id2:983862,rs2:1},
+  {date:"2026-05-27",season:"Spring 2026",team1:"Fo Life",id1:958064,rs1:1,team2:"Just the Tipsy",id2:965690,rs2:6},
+  {date:"2026-05-27",season:"Spring 2026",team1:"MC Ballers",id1:982777,rs1:0,team2:"Hot Cuts!",id2:963248,rs2:13},
+  {date:"2026-06-03",season:"Spring 2026",team1:"Vaxxed & Waxxed",id1:963894,rs1:11,team2:"Fresh Kick of Ball Air",id2:984260,rs2:3},
+  {date:"2026-06-03",season:"Spring 2026",team1:"The Sharks",id1:985443,rs1:10,team2:"Trojans",id2:966028,rs2:7},
+  {date:"2026-06-03",season:"Spring 2026",team1:"Vaxxed & Waxxed",id1:963894,rs1:4,team2:"Just the Tipsy",id2:965690,rs2:8},
+  {date:"2026-06-03",season:"Spring 2026",team1:"The Sharks",id1:985443,rs1:5,team2:"Hot Cuts!",id2:963248,rs2:13},
+  {date:"2026-07-01",season:"Summer 2026",team1:"Fo Life",id1:1006602,rs1:10,team2:"Kick Us While We’re Down",id2:1003736,rs2:4},
+  {date:"2026-07-01",season:"Summer 2026",team1:"Trojans",id1:1003943,rs1:2,team2:"The Sharks",id2:1006427,rs2:22},
+  {date:"2026-07-01",season:"Summer 2026",team1:"Vaxxed & Waxxed",id1:1004309,rs1:7,team2:"Hot Cuts!",id2:1004225,rs2:3},
+  {date:"2026-07-01",season:"Summer 2026",team1:"Life's a Pitch",id1:995950,rs1:10,team2:"EA Sports",id2:1008521,rs2:12},
+  {date:"2026-07-01",season:"Summer 2026",team1:"Just the Tipsy",id1:1005394,rs1:6,team2:"Average AND Savage",id2:1006133,rs2:9},
+  {date:"2026-07-08",season:"Summer 2026",team1:"Hot Cuts!",id1:1004225,rs1:15,team2:"Kick Us While We’re Down",id2:1003736,rs2:4},
+  {date:"2026-07-08",season:"Summer 2026",team1:"Life's a Pitch",id1:995950,rs1:2,team2:"The Sharks",id2:1006427,rs2:7},
+  {date:"2026-07-08",season:"Summer 2026",team1:"Just the Tipsy",id1:1005394,rs1:6,team2:"Fo Life",id2:1006602,rs2:5},
+  {date:"2026-07-08",season:"Summer 2026",team1:"Beanie Badies",id1:995100,rs1:6,team2:"EA Sports",id2:1008521,rs2:12},
+  {date:"2026-07-08",season:"Summer 2026",team1:"Vaxxed & Waxxed",id1:1004309,rs1:5,team2:"Average AND Savage",id2:1006133,rs2:2},
+  {date:"2026-07-15",season:"Summer 2026",team1:"Hot Cuts!",id1:1004225,rs1:0,team2:"Just the Tipsy",id2:1005394,rs2:5},
+  {date:"2026-07-15",season:"Summer 2026",team1:"The Sharks",id1:1006427,rs1:13,team2:"Beanie Badies",id2:995100,rs2:2},
+  {date:"2026-07-15",season:"Summer 2026",team1:"Kick Us While We’re Down",id1:1003736,rs1:1,team2:"Fo Life",id2:1006602,rs2:3},
+  {date:"2026-07-15",season:"Summer 2026",team1:"EA Sports",id1:1008521,rs1:7,team2:"Trojans",id2:1003943,rs2:8},
+  {date:"2026-07-15",season:"Summer 2026",team1:"Average AND Savage",id1:1006133,rs1:3,team2:"Vaxxed & Waxxed",id2:1004309,rs2:8},
+  {date:"2026-07-15",season:"Summer 2026",team1:"Trojans",id1:1003943,rs1:7,team2:"Life's a Pitch",id2:995950,rs2:9},
+  {date:"2026-07-22",season:"Summer 2026",team1:"Hot Cuts!",id1:1004225,rs1:1,team2:"Just the Tipsy",id2:1005394,rs2:6},
+  {date:"2026-07-22",season:"Summer 2026",team1:"Beanie Badies",id1:995100,rs1:7,team2:"Life's a Pitch",id2:995950,rs2:8},
+  {date:"2026-07-22",season:"Summer 2026",team1:"Kick Us While We’re Down",id1:1003736,rs1:0,team2:"Vaxxed & Waxxed",id2:1004309,rs2:8},
+  {date:"2026-07-22",season:"Summer 2026",team1:"The Sharks",id1:1006427,rs1:7,team2:"Trojans",id2:1003943,rs2:3},
+  {date:"2026-07-29",season:"Summer 2026",team1:"Fo Life",id1:1006602,rs1:2,team2:"Vaxxed & Waxxed",id2:1004309,rs2:6},
+  {date:"2026-07-29",season:"Summer 2026",team1:"Life's a Pitch",id1:995950,rs1:8,team2:"Trojans",id2:1003943,rs2:4},
+  {date:"2026-07-29",season:"Summer 2026",team1:"Just the Tipsy",id1:1005394,rs1:15,team2:"Kick Us While We’re Down",id2:1003736,rs2:2},
+  {date:"2026-07-29",season:"Summer 2026",team1:"Beanie Badies",id1:995100,rs1:2,team2:"The Sharks",id2:1006427,rs2:8},
+  {date:"2026-07-29",season:"Summer 2026",team1:"Average AND Savage",id1:1006133,rs1:9,team2:"Hot Cuts!",id2:1004225,rs2:2},
+  {date:"2026-08-05",season:"Summer 2026",team1:"Hot Cuts!",id1:1004225,rs1:2,team2:"Fo Life",id2:1006602,rs2:1},
+  {date:"2026-08-05",season:"Summer 2026",team1:"Beanie Badies",id1:995100,rs1:0,team2:"Trojans",id2:1003943,rs2:1},
+  {date:"2026-08-05",season:"Summer 2026",team1:"Hot Cuts!",id1:1004225,rs1:0,team2:"Vaxxed & Waxxed",id2:1004309,rs2:8},
+  {date:"2026-08-05",season:"Summer 2026",team1:"Trojans",id1:1003943,rs1:3,team2:"The Sharks",id2:1006427,rs2:8},
+  {date:"2026-08-12",season:"Summer 2026",team1:"Kick Us While We’re Down",id1:1003736,rs1:5,team2:"Average AND Savage",id2:1006133,rs2:3},
+  {date:"2026-08-12",season:"Summer 2026",team1:"EA Sports",id1:1008521,rs1:4,team2:"Life's a Pitch",id2:995950,rs2:5},
+  {date:"2026-08-12",season:"Summer 2026",team1:"Kick Us While We’re Down",id1:1003736,rs1:6,team2:"Just the Tipsy",id2:1005394,rs2:7},
+  {date:"2026-08-12",season:"Summer 2026",team1:"Life's a Pitch",id1:995950,rs1:7,team2:"The Sharks",id2:1006427,rs2:5},
+  {date:"2026-08-12",season:"Summer 2026",team1:"Just the Tipsy",id1:1005394,rs1:3,team2:"Vaxxed & Waxxed",id2:1004309,rs2:4},
+  {date:"2026-08-19",season:"Fall 2026",team1:"MC Ballers",id1:1039896,rs1:1,team2:"Kick Us While We’re Down",id2:1040874,rs2:4},
+  {date:"2026-08-19",season:"Fall 2026",team1:"Unsafe at Home",id1:1047026,rs1:4,team2:"Hot Cuts!",id2:1042323,rs2:4},
+  {date:"2026-08-19",season:"Fall 2026",team1:"Just the Tipsy",id1:1047675,rs1:1,team2:"We’d Kick That",id2:1048145,rs2:0},
+  {date:"2026-08-19",season:"Fall 2026",team1:"Fo’ Life",id1:1038353,rs1:5,team2:"The Sharks",id2:1046315,rs2:6},
+  {date:"2026-08-19",season:"Fall 2026",team1:"Gnar Gnar",id1:1036178,rs1:1,team2:"Vaxxed & Waxxed",id2:1040143,rs2:3},
+  {date:"2026-08-19",season:"Fall 2026",team1:"Ope!",id1:1045554,rs1:3,team2:"Our Other Other Team",id2:1046352,rs2:3}
+];
+
+let selectedTeamIdx = -1;
+let currentDisplayedTeams = [];
+
+// Build index: id → { name, aliases, games[] }
+// games[] entries from the perspective of this team: { date, season, opp, oppId, rs, ra }
+function buildTeamIndex() {
+  const index = {};
+  if (typeof ALL_LEAGUE_GAMES === 'undefined') return index;
+  ALL_LEAGUE_GAMES.forEach(g => {
+    [
+      { id: g.id1, name: g.team1, oppId: g.id2, opp: g.team2, rs: g.rs1, ra: g.rs2 },
+      { id: g.id2, name: g.team2, oppId: g.id1, opp: g.team1, rs: g.rs2, ra: g.rs1 },
+    ].forEach(({ id, name, oppId, opp, rs, ra }) => {
+      if (!index[id]) index[id] = { id, name, games: [] };
+      // Track most recent name
+      index[id].name = name;
+      index[id].games.push({ date: g.date, season: g.season, opp, oppId, rs, ra });
+    });
+  });
+  return index;
+}
+
+const TEAM_INDEX = buildTeamIndex();
+const TEAM_LIST  = Object.values(TEAM_INDEX).sort((a, b) => a.name.localeCompare(b.name));
+
+function normalizeName(name) {
+  return name.toLowerCase()
+    .replace(/\band\b/g, '&')
+    .replace(/[^a-z0-9&]/g, '');
+}
+
+function buildMergedTeamList() {
+  const groups = {};
+  TEAM_LIST.forEach(team => {
+    const key = normalizeName(team.name);
+    if (!groups[key]) groups[key] = { id: key, name: team.name, games: [], latestDate: '' };
+    groups[key].games.push(...team.games);
+    const latest = team.games.reduce((d, g) => g.date > d ? g.date : d, '');
+    if (latest > groups[key].latestDate) { groups[key].latestDate = latest; groups[key].name = team.name; }
+  });
+  return Object.values(groups)
+    .map(({ id, name, games }) => ({ id, name, games }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+const MERGED_TEAM_LIST = buildMergedTeamList();
+
+function buildSeasonTeams() {
+  const map = {};
+  ALL_LEAGUE_GAMES.forEach(g => {
+    if (!map[g.season]) map[g.season] = new Map();
+    map[g.season].set(g.id1, g.team1);
+    map[g.season].set(g.id2, g.team2);
+  });
+  return map;
+}
+const SEASON_TEAMS = buildSeasonTeams();
+const LEAGUE_SEASONS = Object.keys(SEASON_TEAMS);
+
+function filterTeamsBySeason() {
+  const season = document.getElementById('leagueSeasonFilter').value;
+  selectedTeamIdx = -1;
+  document.getElementById('teamDetail').style.display = 'none';
+  if (!season) { renderTeamChips(MERGED_TEAM_LIST); return; }
+  const teams = [...SEASON_TEAMS[season].entries()]
+    .map(([id]) => TEAM_INDEX[id])
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  renderTeamChips(teams);
+}
+
+function renderTeamChips(teams) {
+  currentDisplayedTeams = teams;
+  const wrap = document.getElementById('teamListWrap');
+  document.getElementById('teamCount').textContent = `${teams.length} team${teams.length !== 1 ? 's' : ''}`;
+  wrap.innerHTML = teams.map((t, i) =>
+    `<button class="team-chip${i === selectedTeamIdx ? ' active' : ''}"
+             onclick="selectTeam(${i})">${t.name}</button>`
+  ).join('');
+}
+
+function selectTeam(idx) {
+  selectedTeamIdx = idx;
+  const team = currentDisplayedTeams[idx];
+  if (!team) return;
+  filterTeamsBySeason(); // re-render chips to update active state
+  renderTeamDetail(team);
+}
+
+function renderTeamDetail(team) {
+  document.getElementById('teamDetail').style.display = 'block';
+  document.getElementById('teamDetailName').textContent = team.name;
+
+  const games = team.games.slice().sort((a, b) => a.date.localeCompare(b.date));
+  const w = games.filter(g => g.rs > g.ra).length;
+  const l = games.filter(g => g.rs < g.ra).length;
+  const t = games.filter(g => g.rs === g.ra).length;
+  const rs = games.reduce((s, g) => s + g.rs, 0);
+  const ra = games.reduce((s, g) => s + g.ra, 0);
+  const gp = games.length;
+
+  document.getElementById('teamStatCards').innerHTML = `
+    <div class="fact-card"><div class="fact-val">${w}–${l}–${t}</div><div class="fact-lbl">All-Time Record</div><div class="fact-sub">${gp} games tracked</div></div>
+    <div class="fact-card"><div class="fact-val">${pct(w, l, t)}</div><div class="fact-lbl">Win %</div></div>
+    <div class="fact-card"><div class="fact-val">${rs}</div><div class="fact-lbl">Runs Scored</div><div class="fact-sub">${fmt(rs/gp, 1)} per game</div></div>
+    <div class="fact-card"><div class="fact-val">${ra}</div><div class="fact-lbl">Runs Allowed</div><div class="fact-sub">${fmt(ra/gp, 1)} per game</div></div>
+    <div class="fact-card"><div class="fact-val">${rs - ra >= 0 ? '+' : ''}${rs - ra}</div><div class="fact-lbl">Run Differential</div></div>
+  `;
+
+  // Season breakdown
+  const byseason = {};
+  games.forEach(g => {
+    if (!byseason[g.season]) byseason[g.season] = { w:0, l:0, t:0, rs:0, ra:0 };
+    const s = byseason[g.season];
+    if (g.rs > g.ra) s.w++; else if (g.rs < g.ra) s.l++; else s.t++;
+    s.rs += g.rs; s.ra += g.ra;
+  });
+  document.getElementById('teamSeasonsTbody').innerHTML = Object.entries(byseason).map(([season, s]) => {
+    const sgp = s.w + s.l + s.t;
+    return `<tr>
+      <td class="left">${season}</td>
+      <td>${sgp}</td>
+      <td class="win">${s.w}</td><td class="loss">${s.l}</td><td>${s.t}</td>
+      <td>${pct(s.w, s.l, s.t)}</td>
+      <td>${s.rs}</td><td>${s.ra}</td>
+      <td>${s.rs-s.ra >= 0 ? '+' : ''}${s.rs-s.ra}</td>
+    </tr>`;
+  }).join('');
+
+  // Game log
+  document.getElementById('teamGameLogTbody').innerHTML = games.map((g, i) => {
+    const outcome = g.rs > g.ra ? 'Win' : (g.rs < g.ra ? 'Loss' : 'Tie');
+    const margin  = g.rs - g.ra;
+    return `<tr>
+      <td class="left">${i+1}</td>
+      <td class="left">${g.season}</td>
+      <td class="left">${g.date}</td>
+      <td class="left">${g.opp}</td>
+      <td class="${outcomeClass(outcome)}">${outcome}</td>
+      <td>${g.rs} – ${g.ra}</td>
+      <td>${g.rs}</td><td>${g.ra}</td>
+      <td>${margin > 0 ? '+' : ''}${margin}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('teamGameLogTfoot').innerHTML = `<tr>
+    <td class="left" colspan="4">${gp} games · ${w}W ${l}L ${t}T · ${pct(w,l,t)} Win%</td>
+    <td></td><td></td>
+    <td>${rs}</td><td>${ra}</td>
+    <td>${rs-ra >= 0 ? '+' : ''}${rs-ra}</td>
+  </tr>`;
+
+  document.getElementById('teamDetail').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Initialize team list when tab first opens
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof ALL_LEAGUE_GAMES !== 'undefined') {
+    const sel = document.getElementById('leagueSeasonFilter');
+    LEAGUE_SEASONS.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s; o.textContent = s;
+      sel.appendChild(o);
+    });
+    sel.value = LEAGUE_SEASONS[LEAGUE_SEASONS.length - 1];
+    filterTeamsBySeason();
+  }
+});
+
 // ── Tab switching ──────────────────────────────────────────────────────────────
 
 function showTab(name) {
@@ -861,6 +1519,9 @@ function showTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   event.target.classList.add('active');
+  if (name === 'teams' && typeof ALL_LEAGUE_GAMES !== 'undefined') {
+    filterTeamsBySeason();
+  }
 }
 </script>
 
