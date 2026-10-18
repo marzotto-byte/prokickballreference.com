@@ -564,7 +564,7 @@ const SEASONS = [
   { season:"Fall 2025", w:3, l:3, t:2, rs:31,  ra:30,  seed:4, teams:5,  outcome:"Loss in Semifinals",  result:"0–2",      opp:"Team Gnar Gnar",               champ:false  },
   { season:"Spring 2026", w:5, l:4, t:0, rs:40,  ra:33,  seed:3, teams:6,  outcome:"Loss in Championship",  result:"4–8",      opp:"Just the Tipsy",               champ:false  },
   { season:"Summer 2026", w:7, l:0, t:0, rs:46,  ra:13,  seed:1, teams:6,  outcome:"WIN Championship",  result:"4–3 (11th inning)",      opp:"Just the Tipsy",               champ:true  },
-  { season:"Fall 2026", w:4, l:2, t:0, rs:28,  ra:22,  seed:0, teams:0,  outcome:"Season in Progress",  result:"—",      opp:"TBD",               champ:false  }
+  { season:"Fall 2026", w:6, l:2, t:0, rs:35,  ra:27,  seed:0, teams:0,  outcome:"Season in Progress",  result:"—",      opp:"TBD",               champ:false  }
 ];
 
 const GAMES = [
@@ -696,7 +696,9 @@ const GAMES = [
   {season:"Fall 2026",date:"2026-09-02",opp:"Just the Tipsy",outcome:"Loss",score:"2 – 4",rs:2,ra:4,margin:-2},
   {season:"Fall 2026",date:"2026-09-09",opp:"We’d Kick That",outcome:"Win",score:"10 – 6",rs:10,ra:6,margin:4},
   {season:"Fall 2026",date:"2026-09-16",opp:"Gnar Gnar",outcome:"Win",score:"4 – 2",rs:4,ra:2,margin:2},
-  {season:"Fall 2026",date:"2026-09-23",opp:"Just the Tipsy",outcome:"Loss",score:"3 – 7",rs:3,ra:7,margin:-4}
+  {season:"Fall 2026",date:"2026-09-23",opp:"Just the Tipsy",outcome:"Loss",score:"3 – 7",rs:3,ra:7,margin:-4},
+  {season:"Fall 2026",date:"2026-10-14",opp:"Gnar Gnar",outcome:"Win",score:"4 – 3",rs:4,ra:3,margin:1},
+  {season:"Fall 2026",date:"2026-10-14",opp:"Just the Tipsy",outcome:"Win",score:"3 – 2",rs:3,ra:2,margin:1}
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -1674,7 +1676,11 @@ const ALL_LEAGUE_GAMES = [
   {date:"2026-10-07",season:"Fall 2026",team1:"Kick Us While We’re Down",id1:1040874,rs1:9,team2:"MC Ballers",id2:1039896,rs2:5},
   {date:"2026-10-07",season:"Fall 2026",team1:"We’d Kick That",id1:1048145,rs1:2,team2:"Just the Tipsy",id2:1047675,rs2:5},
   {date:"2026-10-07",season:"Fall 2026",team1:"Ope!",id1:1045554,rs1:7,team2:"Our Other Other Team",id2:1046352,rs2:12},
-  {date:"2026-10-07",season:"Fall 2026",team1:"The Sharks",id1:1046315,rs1:1,team2:"Hot Cuts!",id2:1042323,rs2:4}
+  {date:"2026-10-07",season:"Fall 2026",team1:"The Sharks",id1:1046315,rs1:1,team2:"Hot Cuts!",id2:1042323,rs2:4},
+  {date:"2026-10-14",season:"Fall 2026",team1:"Hot Cuts!",id1:1042323,rs1:1,team2:"Fo’ Life",id2:1038353,rs2:3},
+  {date:"2026-10-14",season:"Fall 2026",team1:"Gnar Gnar",id1:1036178,rs1:3,team2:"Vaxxed & Waxxed",id2:1040143,rs2:4},
+  {date:"2026-10-14",season:"Fall 2026",team1:"Kick Us While We’re Down",id1:1040874,rs1:6,team2:"Our Other Other Team",id2:1046352,rs2:5},
+  {date:"2026-10-14",season:"Fall 2026",team1:"Vaxxed & Waxxed",id1:1040143,rs1:3,team2:"Just the Tipsy",id2:1047675,rs2:2}
 ];
 
 let selectedTeamIdx = -1;
